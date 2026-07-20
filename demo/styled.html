@@ -1,0 +1,126 @@
+<!doctype html>
+<!--
+  bison-jib-sdk — STYLED demo.
+
+  Same components, same mock transport as index.html, but this page links the
+  opt-in stylesheet and exercises ALL FOUR styling layers:
+
+    1. CLASS CONTRACT   — comes free from styles.css (bison-* hooks).
+    2. STATE ATTRIBUTES — step chips restyle via [data-state], bank rows via
+                          [data-verified]/[data-default] (also free from styles.css).
+    3. SLOTS            — the light-DOM children below with slot="header" /
+                          slot="section-intro:business" / slot="empty-state" are
+                          lifted into place by the components.
+    4. DESIGN TOKENS    — the <style> block reassigns a few --bison-* props to
+                          reskin without touching a single selector.
+
+  Run:  bun run build  (produces dist/, incl. dist/styles.css), then serve /demo/.
+-->
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bison-jib-sdk — styled demo</title>
+
+    <!-- Layer 1+2: the opt-in starter stylesheet. -->
+    <link rel="stylesheet" href="../dist/styles.css" />
+
+    <style>
+      /* Layer 4: token overrides. This reskins everything — a teal brand, a
+         tighter radius — with zero selector edits. */
+      :root {
+        --bison-accent: #0d7a6f;
+        --bison-accent-hover: #0a5c54;
+        --bison-accent-soft: #e6f4f2;
+        --bison-focus-ring: #0d7a6f;
+        --bison-radius: 12px;
+        --bison-radius-sm: 8px;
+      }
+
+      /* Demo chrome only. */
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 64rem; background: var(--bison-bg); color: var(--bison-text); }
+      .demo-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.75rem; }
+      .demo-grid { display: grid; gap: 2.5rem; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); align-items: start; }
+      h2 { font-size: 1rem; }
+
+      /* Styling for our own slotted markup (the SDK ships no CSS for slot
+         content — the consumer owns its look). */
+      .my-header { display: flex; align-items: baseline; gap: 0.5rem; margin: 0 0 1rem; }
+      .my-header h3 { margin: 0; font-size: 1.15rem; }
+      .my-header span { color: var(--bison-text-muted); font-size: 0.85rem; }
+      .my-intro { display: flex; gap: 0.5rem; align-items: flex-start; }
+      .my-empty { display: grid; gap: 0.5rem; justify-items: center; }
+      .my-empty strong { font-size: 1rem; }
+    </style>
+  </head>
+  <body>
+    <header class="demo-bar">
+      <strong>bison-jib-sdk</strong>
+      <span>styled — class + attribute + slot + token layers, all live</span>
+      <label>Theme:
+        <select id="theme">
+          <option value="light">light</option>
+          <option value="dark">dark</option>
+        </select>
+      </label>
+      <label>Persona:
+        <select id="persona">
+          <option value="wio">wio</option>
+          <option value="operator">operator</option>
+        </select>
+      </label>
+      <a href="./index.html">&larr; Back to the unstyled version</a>
+    </header>
+
+    <div class="demo-grid">
+      <section>
+        <h2>&lt;bison-onboarding&gt;</h2>
+        <bison-onboarding id="onboarding" persona="wio" scope-id="wio_demo_1">
+          <!-- Layer 3: slots. These children are projected into the component. -->
+          <header slot="header" class="my-header">
+            <h3>Set up JIB Pay</h3>
+            <span>~4 minutes</span>
+          </header>
+          <p slot="section-intro:business" class="my-intro">
+            <span>&#128188;</span>
+            <span>Tell us about your company. This must match your EIN filing.</span>
+          </p>
+        </bison-onboarding>
+      </section>
+
+      <section>
+        <h2>&lt;bison-bank-crud&gt;</h2>
+        <bison-bank-crud id="bank" persona="wio" scope-id="wio_demo_1">
+          <!-- Slot: custom empty state, shown when there are no accounts. -->
+          <div slot="empty-state" class="my-empty">
+            <strong>No bank accounts yet</strong>
+            <span>Add one to receive JIB payments.</span>
+          </div>
+        </bison-bank-crud>
+      </section>
+    </div>
+
+    <script type="module">
+      import { createClient, mock } from '../dist/index.js'
+      import { defineBisonComponents } from '../dist/components/index.js'
+
+      defineBisonComponents()
+
+      const client = createClient({ transport: mock() })
+      const onboarding = document.getElementById('onboarding')
+      const bank = document.getElementById('bank')
+      onboarding.client = client
+      bank.client = client
+
+      document.getElementById('persona').addEventListener('change', (e) => {
+        onboarding.setAttribute('persona', e.target.value)
+        bank.setAttribute('persona', e.target.value)
+      })
+
+      // Theme toggle — [data-theme] on <html> overrides prefers-color-scheme.
+      document.getElementById('theme').addEventListener('change', (e) => {
+        document.documentElement.setAttribute('data-theme', e.target.value)
+      })
+    </script>
+  </body>
+</html>

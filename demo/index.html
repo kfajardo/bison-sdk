@@ -1,0 +1,108 @@
+<!doctype html>
+<!--
+  bison-jib-sdk — UNSTYLED demo (zero-CSS default).
+
+  Proves the components ship no CSS of their own: everything below renders as
+  plain light-DOM HTML. Compare with styled.html, which links the opt-in
+  stylesheet.
+
+  Uses the MOCK transport — no backend, no tokens. `mock()` replays the
+  documented API behavior in-process, so the whole flow clicks through offline.
+
+  Run:  bun run build   (compiles src -> dist, which this imports)
+        then serve this folder with any static server, e.g.
+        `bunx serve .` or `python3 -m http.server`, and open /demo/.
+
+  To run straight from source instead of dist, change the ../dist imports below
+  to ../src (needs a dev server that serves .ts, e.g. Vite).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bison-jib-sdk — unstyled demo</title>
+    <!-- Skeleton styling for the demo CHROME only (toggle bar, log panel).
+         The bison components themselves get NO CSS here — that is the point. -->
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 64rem; }
+      .demo-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #ccc; }
+      .demo-grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); align-items: start; }
+      .demo-log { position: sticky; top: 1rem; }
+      .demo-log pre { max-height: 26rem; overflow: auto; background: #111; color: #b6f7c1; padding: 0.75rem; font-size: 0.75rem; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+      h2 { font-size: 1rem; }
+    </style>
+  </head>
+  <body>
+    <header class="demo-bar">
+      <strong>bison-jib-sdk</strong>
+      <span>unstyled — proves the zero-CSS default</span>
+      <label>Persona:
+        <select id="persona">
+          <option value="wio">wio</option>
+          <option value="operator">operator</option>
+        </select>
+      </label>
+      <a href="./styled.html">See the styled version &rarr;</a>
+    </header>
+
+    <div class="demo-grid">
+      <main>
+        <section>
+          <h2>&lt;bison-onboarding&gt;</h2>
+          <bison-onboarding id="onboarding" persona="wio" scope-id="wio_demo_1"></bison-onboarding>
+        </section>
+
+        <section>
+          <h2>&lt;bison-bank-crud&gt;</h2>
+          <bison-bank-crud id="bank" persona="wio" scope-id="wio_demo_1"></bison-bank-crud>
+        </section>
+      </main>
+
+      <aside class="demo-log">
+        <h2>Event log</h2>
+        <pre id="log">(bison-* events appear here as you use the components)</pre>
+      </aside>
+    </div>
+
+    <script type="module">
+      // Built ESM from dist. mock() needs no baseUrl/auth — it answers in-process.
+      import { createClient, mock } from '../dist/index.js'
+      import { defineBisonComponents } from '../dist/components/index.js'
+
+      defineBisonComponents()
+
+      // One mock-backed client shared by both components. Set as a property so
+      // no network/token config is required.
+      const client = createClient({ transport: mock() })
+      const onboarding = document.getElementById('onboarding')
+      const bank = document.getElementById('bank')
+      onboarding.client = client
+      bank.client = client
+
+      // Persona toggle — swap the attribute; components re-render themselves.
+      document.getElementById('persona').addEventListener('change', (e) => {
+        onboarding.setAttribute('persona', e.target.value)
+        bank.setAttribute('persona', e.target.value)
+      })
+
+      // Event log — every documented bison-* event bubbles to the host, so one
+      // delegated listener per name on `document` catches them all.
+      const log = document.getElementById('log')
+      const EVENTS = [
+        'bison-step-change', 'bison-status-checked', 'bison-already-onboarded',
+        'bison-already-registered', 'bison-submit-success', 'bison-submit-error',
+        'bison-bank-added', 'bison-bank-deleted', 'bison-bank-default-changed', 'bison-bank-verified',
+      ]
+      let first = true
+      for (const name of EVENTS) {
+        document.addEventListener(name, (e) => {
+          if (first) { log.textContent = ''; first = false }
+          let detail
+          try { detail = JSON.stringify(e.detail) } catch { detail = String(e.detail) }
+          log.textContent += `${new Date().toLocaleTimeString()}  ${name}  ${detail ?? ''}\n`
+          log.scrollTop = log.scrollHeight
+        })
+      }
+    </script>
+  </body>
+</html>

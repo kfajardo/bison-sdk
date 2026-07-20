@@ -1,0 +1,621 @@
+/*
+ * bison-jib-sdk — opt-in starter stylesheet.
+ *
+ * Ships NOTHING by default. Import it explicitly to get a clean, accessible
+ * default look for <bison-onboarding>, <bison-onboarding-step> and
+ * <bison-bank-crud>:
+ *
+ *     import 'bison-jib-sdk/styles.css'
+ *   or
+ *     <link rel="stylesheet" href=".../bison-jib-sdk/dist/styles.css">
+ *
+ * Built entirely on the public contract — the bison-* class hooks, the
+ * data-* state attributes, and the --bison-* design tokens. Override any
+ * token in your own :root (or on the host element) to reskin without
+ * touching a single selector. See docs/STYLING.md for the full contract.
+ *
+ * Self-contained: no @import, no external fonts, no network requests.
+ * Theme-aware: light + dark via prefers-color-scheme and [data-theme].
+ */
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Every value the stylesheet uses is a --bison-* custom property. Reassign
+   any of these to reskin. Light theme is the default. */
+:root {
+  --bison-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --bison-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Surfaces & text */
+  --bison-bg: #ffffff;
+  --bison-surface: #f6f8fa;
+  --bison-surface-raised: #ffffff;
+  --bison-text: #1c2530;
+  --bison-text-muted: #5b6875;
+  --bison-border: #d8dee6;
+  --bison-border-strong: #b7c0cb;
+
+  /* Brand / accent */
+  --bison-accent: #b45309;              /* bison/amber — the one brand hook */
+  --bison-accent-hover: #92400e;
+  --bison-accent-contrast: #ffffff;
+  --bison-accent-soft: #fdf6ec;         /* accent-tinted fill */
+  --bison-focus-ring: #d97706;
+
+  /* Semantic */
+  --bison-error: #c62828;
+  --bison-error-soft: #fdecea;
+  --bison-success: #1b7a43;
+  --bison-success-soft: #e7f4ec;
+  --bison-warning: #b7791f;
+  --bison-warning-soft: #fdf3e0;
+
+  /* Step-state accents (accordion / stepper) */
+  --bison-state-active: var(--bison-accent);
+  --bison-state-done: var(--bison-success);
+  --bison-state-locked: var(--bison-text-muted);
+
+  /* Geometry & motion */
+  --bison-radius: 8px;
+  --bison-radius-sm: 5px;
+  --bison-radius-pill: 999px;
+  --bison-gap: 1rem;
+  --bison-gap-sm: 0.5rem;
+  --bison-pad: 1.25rem;
+  --bison-field-h: 2.6rem;
+  --bison-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --bison-shadow-pop: 0 8px 28px rgba(16, 24, 40, 0.18);
+  --bison-ease: 160ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bison-bg: #10151b;
+    --bison-surface: #161c24;
+    --bison-surface-raised: #1c242e;
+    --bison-text: #e7edf3;
+    --bison-text-muted: #9aa7b4;
+    --bison-border: #2b3542;
+    --bison-border-strong: #3b4959;
+    --bison-accent: #f59e0b;
+    --bison-accent-hover: #fbbf24;
+    --bison-accent-contrast: #1c1206;
+    --bison-accent-soft: #2a2113;
+    --bison-focus-ring: #fbbf24;
+    --bison-error: #f2777a;
+    --bison-error-soft: #2c1a1b;
+    --bison-success: #5ecb86;
+    --bison-success-soft: #16281d;
+    --bison-warning: #e0b155;
+    --bison-warning-soft: #2a2416;
+    --bison-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.4);
+    --bison-shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Explicit [data-theme] wins over the media query in both directions, so a
+   consumer's theme toggle is authoritative. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bison-bg: #ffffff; --bison-surface: #f6f8fa; --bison-surface-raised: #ffffff;
+  --bison-text: #1c2530; --bison-text-muted: #5b6875;
+  --bison-border: #d8dee6; --bison-border-strong: #b7c0cb;
+  --bison-accent: #b45309; --bison-accent-hover: #92400e; --bison-accent-contrast: #ffffff;
+  --bison-accent-soft: #fdf6ec; --bison-focus-ring: #d97706;
+  --bison-error: #c62828; --bison-error-soft: #fdecea;
+  --bison-success: #1b7a43; --bison-success-soft: #e7f4ec;
+  --bison-warning: #b7791f; --bison-warning-soft: #fdf3e0;
+  --bison-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --bison-shadow-pop: 0 8px 28px rgba(16, 24, 40, 0.18);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bison-bg: #10151b; --bison-surface: #161c24; --bison-surface-raised: #1c242e;
+  --bison-text: #e7edf3; --bison-text-muted: #9aa7b4;
+  --bison-border: #2b3542; --bison-border-strong: #3b4959;
+  --bison-accent: #f59e0b; --bison-accent-hover: #fbbf24; --bison-accent-contrast: #1c1206;
+  --bison-accent-soft: #2a2113; --bison-focus-ring: #fbbf24;
+  --bison-error: #f2777a; --bison-error-soft: #2c1a1b;
+  --bison-success: #5ecb86; --bison-success-soft: #16281d;
+  --bison-warning: #e0b155; --bison-warning-soft: #2a2416;
+  --bison-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --bison-shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Hosts ─────────────────────────────────────────────────────────────────
+   The custom elements are inline by default (undefined-element behavior);
+   make them block flow containers. */
+bison-onboarding,
+bison-onboarding-step,
+bison-bank-crud {
+  display: block;
+  font-family: var(--bison-font);
+  color: var(--bison-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bison-onboarding,
+.bison-bank-crud {
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Onboarding — accordion / stepper
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.bison-onboarding__steps {
+  list-style: none;
+  margin: 0 0 var(--bison-gap);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bison-gap-sm);
+}
+
+/* Step chips carry state as data-attributes (data-state / data-step). */
+.bison-onboarding__step-item {
+  flex: 1 1 auto;
+  min-width: max-content;
+  display: flex;
+  align-items: center;
+  gap: var(--bison-gap-sm);
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius-pill);
+  background: var(--bison-surface);
+  color: var(--bison-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color var(--bison-ease), background var(--bison-ease), border-color var(--bison-ease);
+}
+
+/* A leading marker dot, colored per state. */
+.bison-onboarding__step-item::before {
+  content: "";
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.bison-onboarding__step-item[data-state="active"] {
+  color: var(--bison-state-active);
+  border-color: var(--bison-state-active);
+  background: var(--bison-accent-soft);
+  font-weight: 600;
+}
+.bison-onboarding__step-item[data-state="done"] {
+  color: var(--bison-state-done);
+  border-color: color-mix(in srgb, var(--bison-state-done) 45%, var(--bison-border));
+  background: var(--bison-success-soft);
+}
+.bison-onboarding__step-item[data-state="done"]::before {
+  /* checkmark instead of dot */
+  content: "\2713";
+  background: none;
+  opacity: 1;
+  font-size: 0.75rem;
+  line-height: 0.55rem;
+}
+.bison-onboarding__step-item[data-state="error"] {
+  color: var(--bison-error);
+  border-color: color-mix(in srgb, var(--bison-error) 45%, var(--bison-border));
+  background: var(--bison-error-soft);
+}
+.bison-onboarding__step-item[data-state="locked"] {
+  color: var(--bison-state-locked);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Back-compat: components may still emit --active / --done modifier classes
+   during the contract transition. Mirror the data-state styling. */
+.bison-onboarding__step-item--active { color: var(--bison-state-active); border-color: var(--bison-state-active); background: var(--bison-accent-soft); font-weight: 600; }
+.bison-onboarding__step-item--done { color: var(--bison-state-done); background: var(--bison-success-soft); }
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+.bison-onboarding__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--bison-gap);
+  padding: var(--bison-pad);
+  background: var(--bison-surface-raised);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  box-shadow: var(--bison-shadow);
+}
+
+/* Slotted section intro sits above the fields, full width. */
+.bison-onboarding__section-intro,
+.bison-onboarding__form > [slot^="section-intro"] {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--bison-text-muted);
+  font-size: 0.92rem;
+}
+
+/* Repeatable groups (beneficial owners) span the whole grid. */
+.bison-onboarding__repeat-item {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--bison-pad);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  background: var(--bison-surface);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--bison-gap);
+}
+.bison-onboarding__repeat-legend {
+  grid-column: 1 / -1;
+  padding: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--bison-text);
+}
+
+/* ── Fields ────────────────────────────────────────────────────────────── */
+.bison-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0; /* let inputs shrink inside the grid */
+}
+/* Address / description-type fields read better full-width. */
+.bison-field--addressLine1,
+.bison-field--addressLine2,
+.bison-field--description,
+.bison-field--website,
+.bison-field--legalBusinessName {
+  grid-column: 1 / -1;
+}
+
+.bison-field__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--bison-text);
+}
+
+.bison-field__input,
+.bison-bank-crud__input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--bison-field-h);
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--bison-text);
+  background: var(--bison-bg);
+  border: 1px solid var(--bison-border-strong);
+  border-radius: var(--bison-radius-sm);
+  transition: border-color var(--bison-ease), box-shadow var(--bison-ease);
+}
+textarea.bison-field__input {
+  min-height: 5rem;
+  resize: vertical;
+}
+.bison-field__input::placeholder { color: var(--bison-text-muted); opacity: 0.7; }
+
+.bison-field__input:hover,
+.bison-bank-crud__input:hover { border-color: var(--bison-accent); }
+
+.bison-field__input:focus-visible,
+.bison-bank-crud__input:focus-visible,
+.bison-onboarding__button:focus-visible,
+.bison-bank-crud__button:focus-visible,
+.bison-bank-crud__row:focus-visible {
+  outline: 2px solid var(--bison-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--bison-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bison-focus-ring) 25%, transparent);
+}
+
+/* Invalid state — driven by aria-invalid (semantic) and the --invalid class. */
+.bison-field--invalid .bison-field__input,
+.bison-field__input[aria-invalid="true"] {
+  border-color: var(--bison-error);
+  background: var(--bison-error-soft);
+}
+
+.bison-field__error,
+.bison-onboarding__error,
+.bison-bank-crud__error {
+  margin: 0;
+  color: var(--bison-error);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.bison-onboarding__error,
+.bison-bank-crud__error {
+  grid-column: 1 / -1;
+  padding: 0.6rem 0.8rem;
+  background: var(--bison-error-soft);
+  border: 1px solid color-mix(in srgb, var(--bison-error) 40%, transparent);
+  border-radius: var(--bison-radius-sm);
+}
+.bison-field__error[hidden],
+.bison-onboarding__error[hidden],
+.bison-bank-crud__error[hidden] { display: none; }
+
+/* ── Actions & buttons ─────────────────────────────────────────────────── */
+.bison-onboarding__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bison-gap-sm);
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.bison-onboarding__button,
+.bison-bank-crud__button {
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--bison-field-h);
+  padding: 0.5rem 1.15rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--bison-accent-contrast);
+  background: var(--bison-accent);
+  border: 1px solid transparent;
+  border-radius: var(--bison-radius-sm);
+  transition: background var(--bison-ease), color var(--bison-ease), border-color var(--bison-ease), transform var(--bison-ease);
+}
+.bison-onboarding__button:hover,
+.bison-bank-crud__button:hover { background: var(--bison-accent-hover); }
+.bison-onboarding__button:active,
+.bison-bank-crud__button:active { transform: translateY(1px); }
+.bison-onboarding__button:disabled,
+.bison-bank-crud__button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+/* Secondary / low-emphasis buttons: Back, Remove, Cancel, ghost actions. */
+.bison-onboarding__button--back,
+.bison-onboarding__button--remove,
+.bison-bank-crud__button--cancel,
+.bison-bank-crud__button--ghost {
+  color: var(--bison-text);
+  background: transparent;
+  border-color: var(--bison-border-strong);
+}
+.bison-onboarding__button--back:hover,
+.bison-onboarding__button--remove:hover,
+.bison-bank-crud__button--cancel:hover,
+.bison-bank-crud__button--ghost:hover {
+  background: var(--bison-surface);
+  border-color: var(--bison-accent);
+}
+.bison-onboarding__button--back { margin-right: auto; } /* push Back to the left */
+.bison-onboarding__button--remove { color: var(--bison-error); border-color: color-mix(in srgb, var(--bison-error) 40%, var(--bison-border-strong)); }
+
+/* "Add another" — dashed, understated, spans the grid. */
+.bison-onboarding__button--add {
+  grid-column: 1 / -1;
+  color: var(--bison-accent);
+  background: transparent;
+  border: 1px dashed var(--bison-accent);
+}
+.bison-onboarding__button--add:hover { background: var(--bison-accent-soft); }
+
+/* ── Done state ────────────────────────────────────────────────────────── */
+.bison-onboarding--done .bison-onboarding__form,
+.bison-onboarding__done {
+  display: grid;
+  place-items: center;
+  gap: var(--bison-gap-sm);
+  padding: calc(var(--bison-pad) * 2) var(--bison-pad);
+  text-align: center;
+  background: var(--bison-surface-raised);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  box-shadow: var(--bison-shadow);
+}
+.bison-onboarding__done::before,
+.bison-onboarding--done::before {
+  content: "\2713";
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  border-radius: 50%;
+  background: var(--bison-success-soft);
+  color: var(--bison-success);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.bison-onboarding__done-message {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--bison-text);
+}
+
+/* Standalone single-step element. */
+.bison-step {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--bison-gap);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Banking — <bison-bank-crud>
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.bison-bank-crud {
+  display: grid;
+  gap: var(--bison-gap);
+}
+
+.bison-bank-crud__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--bison-gap-sm);
+}
+
+/* One account row. data-verified / data-default flag status; data-provider
+   lets consumers brand per provider. */
+.bison-bank-crud__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--bison-gap);
+  padding: 0.85rem var(--bison-pad);
+  background: var(--bison-surface-raised);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  box-shadow: var(--bison-shadow);
+  transition: border-color var(--bison-ease), box-shadow var(--bison-ease);
+}
+.bison-bank-crud__row:hover { border-color: var(--bison-border-strong); }
+
+/* Default account gets an accent edge. */
+.bison-bank-crud__row[data-default] {
+  border-color: var(--bison-accent);
+  box-shadow: var(--bison-shadow), inset 3px 0 0 var(--bison-accent);
+}
+
+/* Bank glyph / avatar. */
+.bison-bank-crud__row::before {
+  content: "\1F3E6"; /* bank emoji as a lightweight default mark */
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.bison-bank-crud__row-main { min-width: 0; display: grid; gap: 0.15rem; }
+.bison-bank-crud__bank-name { font-weight: 600; color: var(--bison-text); }
+.bison-bank-crud__account-number {
+  font-family: var(--bison-font-mono);
+  font-size: 0.85rem;
+  color: var(--bison-text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* Badges — verified / default. */
+.bison-bank-crud__badges { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.bison-bank-crud__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--bison-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+.bison-bank-crud__badge--verified { color: var(--bison-success); background: var(--bison-success-soft); border-color: color-mix(in srgb, var(--bison-success) 35%, transparent); }
+.bison-bank-crud__badge--verified::before { content: "\2713"; }
+.bison-bank-crud__badge--unverified { color: var(--bison-warning); background: var(--bison-warning-soft); border-color: color-mix(in srgb, var(--bison-warning) 35%, transparent); }
+.bison-bank-crud__badge--default { color: var(--bison-accent); background: var(--bison-accent-soft); border-color: color-mix(in srgb, var(--bison-accent) 35%, transparent); }
+
+/* Convenience: derive badge visibility straight from row data-attributes,
+   so a minimal component that only sets data-* still shows status. */
+.bison-bank-crud__row[data-verified] .bison-bank-crud__badge--unverified,
+.bison-bank-crud__row:not([data-verified]) .bison-bank-crud__badge--verified { display: none; }
+.bison-bank-crud__row:not([data-default]) .bison-bank-crud__badge--default { display: none; }
+
+.bison-bank-crud__row-actions { display: flex; gap: 0.35rem; align-items: center; }
+
+/* Empty state. */
+.bison-bank-crud__empty-state {
+  display: grid;
+  place-items: center;
+  gap: var(--bison-gap-sm);
+  padding: calc(var(--bison-pad) * 1.75) var(--bison-pad);
+  text-align: center;
+  color: var(--bison-text-muted);
+  background: var(--bison-surface);
+  border: 1px dashed var(--bison-border-strong);
+  border-radius: var(--bison-radius);
+}
+
+/* Add-account form. */
+.bison-bank-crud__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--bison-gap);
+  padding: var(--bison-pad);
+  background: var(--bison-surface-raised);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  box-shadow: var(--bison-shadow);
+}
+.bison-bank-crud__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bison-gap-sm);
+  justify-content: flex-end;
+}
+
+/* ── Verify (micro-deposit) dialog ─────────────────────────────────────── */
+.bison-bank-crud__dialog,
+dialog.bison-bank-crud__dialog {
+  width: min(26rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 0;
+  color: var(--bison-text);
+  background: var(--bison-surface-raised);
+  border: 1px solid var(--bison-border);
+  border-radius: var(--bison-radius);
+  box-shadow: var(--bison-shadow-pop);
+}
+.bison-bank-crud__dialog::backdrop { background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(2px); }
+
+.bison-bank-crud__dialog-body { display: grid; gap: var(--bison-gap); padding: var(--bison-pad); }
+.bison-bank-crud__dialog-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.bison-bank-crud__dialog-intro { margin: 0; color: var(--bison-text-muted); font-size: 0.9rem; }
+
+/* The MV#### verification code input reads as a code entry. */
+.bison-bank-crud__code-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--bison-field-h);
+  padding: 0.5rem 0.7rem;
+  font-family: var(--bison-font-mono);
+  font-size: 1.25rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--bison-text);
+  background: var(--bison-bg);
+  border: 1px solid var(--bison-border-strong);
+  border-radius: var(--bison-radius-sm);
+}
+.bison-bank-crud__code-input:focus-visible {
+  outline: 2px solid var(--bison-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--bison-accent);
+}
+
+/* ── Provider hints (data-provider) ────────────────────────────────────── */
+.bison-bank-crud[data-provider="column"] { --bison-accent: #3b5bdb; --bison-accent-hover: #2f49af; --bison-accent-soft: #eef1fd; }
+.bison-bank-crud[data-provider="moov"] { /* keep the amber default */ }
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}
+
+/* ── Narrow screens ────────────────────────────────────────────────────── */
+@media (max-width: 30rem) {
+  .bison-onboarding__form,
+  .bison-bank-crud__form,
+  .bison-onboarding__repeat-item,
+  .bison-step { grid-template-columns: 1fr; }
+  .bison-onboarding__actions { justify-content: stretch; }
+  .bison-onboarding__button,
+  .bison-bank-crud__button { flex: 1 1 auto; }
+  .bison-onboarding__button--back { margin-right: 0; }
+  .bison-bank-crud__row { grid-template-columns: auto 1fr; }
+  .bison-bank-crud__row-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
