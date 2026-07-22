@@ -1,5 +1,5 @@
 {
-  "name": "@kfajardo/sdk",
+  "name": "bison-jib-sdk",
   "version": "1.0.0",
   "description": "Bison JIB SDK: typed API client, onboarding validation rules, and unstyled onboarding web components",
   "license": "MIT",

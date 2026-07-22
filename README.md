@@ -8,7 +8,7 @@ them:
 - **Components** — unstyled onboarding + banking web components (framework-agnostic)
 
 ```sh
-npm install @kfajardo/sdk
+npm install bison-jib-sdk
 ```
 
 ## Core
@@ -20,7 +20,7 @@ server mints a short-lived, scope-bound token (from an API-key exchange, or an A
 token — the SDK is neutral) and hands it back per request.
 
 ```ts
-import { createClient } from '@kfajardo/sdk'
+import { createClient } from 'bison-jib-sdk'
 
 const bison = createClient({
   baseUrl: 'https://api.yourhost.com',
@@ -58,7 +58,7 @@ const status = await bison.getOnboardingStatus(scope)
 const business = await bison.getOnboardingSection(scope, 'business')
 
 // Where should a returning user resume? (pure, from status alone)
-import { resolveOnboardingResumeStep } from '@kfajardo/sdk'
+import { resolveOnboardingResumeStep } from 'bison-jib-sdk'
 const step = resolveOnboardingResumeStep(status)
 
 // Submit a section — discriminated by `step`
@@ -105,7 +105,7 @@ For local dev, tests, or demos with no backend, swap in `mock()`. Everything abo
 the transport is identical against it:
 
 ```ts
-import { createClient, mock } from '@kfajardo/sdk'
+import { createClient, mock } from 'bison-jib-sdk'
 
 const bison = createClient({ transport: mock() })   // no baseUrl, no auth needed
 ```
@@ -118,7 +118,7 @@ Pure functions and zod schemas, identical to the platform app's rules. Validate 
 own custom forms before calling the core functions.
 
 ```ts
-import { businessProfileSchema, controlOfficerSchema, validateForm } from '@kfajardo/sdk/validation'
+import { businessProfileSchema, controlOfficerSchema, validateForm } from 'bison-jib-sdk/validation'
 
 const errors = validateForm(businessProfileSchema, formData) // { fieldName: message } or {}
 ```
@@ -130,8 +130,8 @@ regular DOM, so plain CSS reaches all depths.
 
 ```html
 <script type="module">
-  import { createClient } from '@kfajardo/sdk'
-  import { defineBisonComponents } from '@kfajardo/sdk/components'
+  import { createClient } from 'bison-jib-sdk'
+  import { defineBisonComponents } from 'bison-jib-sdk/components'
   defineBisonComponents()
 
   const client = createClient({ baseUrl: 'https://api.yourhost.com', auth: { getToken } })
@@ -180,7 +180,7 @@ Style them from your own stylesheet, or opt into the **starter stylesheet** — 
 clean, accessible, theme-aware default built entirely on the contract above:
 
 ```ts
-import '@kfajardo/sdk/styles.css'
+import 'bison-jib-sdk/styles.css'
 ```
 
 ```css

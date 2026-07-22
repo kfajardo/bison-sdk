@@ -1,6 +1,6 @@
 # Styling & events — the public contract
 
-The `@kfajardo/sdk` components ship as **light-DOM custom elements with zero CSS by
+The `bison-jib-sdk` components ship as **light-DOM custom elements with zero CSS by
 default**. Everything they render is regular DOM, so your CSS reaches every depth —
 no shadow-root piercing, no `::part`. This document is the authoritative reference
 for the styling and event surface, and it is **semver-governed**: the class names,
@@ -173,7 +173,7 @@ content is **yours** — the SDK ships no CSS for it.
 
 ## Layer 4 — Design tokens
 
-The opt-in stylesheet (`@kfajardo/sdk/styles.css`) is built entirely on `--bison-*`
+The opt-in stylesheet (`bison-jib-sdk/styles.css`) is built entirely on `--bison-*`
 custom properties. **Reassign any of them in your own `:root`** (or on a host
 element) to reskin without writing a single selector. Tokens are the fast path;
 Layers 1–3 are for anything a token can't express.
