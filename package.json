@@ -1,8 +1,15 @@
 {
-  "name": "bison-jib-sdk",
+  "name": "@kfajardo/sdk",
   "version": "0.1.0",
   "description": "Bison JIB SDK: typed API client, onboarding validation rules, and unstyled onboarding web components",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kfajardo/bison-sdk.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [

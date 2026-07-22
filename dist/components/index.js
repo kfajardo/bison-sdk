@@ -11,7 +11,7 @@ import { BisonBankAccounts } from './bank_accounts.js';
  *  Idempotent — safe to call more than once. */
 export function defineBisonComponents() {
     if (typeof customElements === 'undefined') {
-        throw new Error('bison-jib-sdk/components requires a browser environment');
+        throw new Error('@kfajardo/sdk/components requires a browser environment');
     }
     if (!customElements.get('bison-onboarding'))
         customElements.define('bison-onboarding', BisonOnboarding);

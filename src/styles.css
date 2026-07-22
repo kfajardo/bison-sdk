@@ -1,12 +1,12 @@
 /*
- * bison-jib-sdk — opt-in starter stylesheet.
+ * @kfajardo/sdk — opt-in starter stylesheet.
  *
  * Ships NOTHING by default. Import it explicitly to get a clean, accessible
  * default look for <bison-onboarding>, <bison-onboarding-partial> and <bison-bank-accounts>:
  *
- *     import 'bison-jib-sdk/styles.css'
+ *     import '@kfajardo/sdk/styles.css'
  *   or
- *     <link rel="stylesheet" href=".../bison-jib-sdk/dist/styles.css">
+ *     <link rel="stylesheet" href=".../@kfajardo/sdk/dist/styles.css">
  *
  * Built entirely on the public contract — the bison-* class hooks, the
  * data-* state attributes, and the --bison-* design tokens. Override any
