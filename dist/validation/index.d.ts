@@ -1,5 +1,6 @@
 import { z } from 'zod';
 export * from './constants.js';
+export * from './partial-onboarding.js';
 export declare const PAYMENT_PROVIDER_ALLOWED_CHARS: RegExp;
 export declare const PAYMENT_PROVIDER_CHAR_ERROR = "Contains characters not allowed by our payment provider. Use only letters, numbers, spaces, and common punctuation (. , ' - & # / !)";
 export declare const collapseWhitespace: (value: string) => string;
@@ -56,8 +57,8 @@ export declare function makeBusinessProfileSchema(options?: {
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -69,8 +70,8 @@ export declare function makeBusinessProfileSchema(options?: {
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -82,8 +83,8 @@ export declare function makeBusinessProfileSchema(options?: {
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -95,8 +96,8 @@ export declare function makeBusinessProfileSchema(options?: {
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -122,8 +123,8 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -135,8 +136,8 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -148,8 +149,8 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -161,8 +162,8 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -188,8 +189,8 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -201,8 +202,8 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -214,8 +215,8 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -227,8 +228,8 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     addressLine1: string;
     city: string;
     state: string;
-    zipCode: string;
     country: string;
+    zipCode: string;
     doingBusinessAs?: string | undefined;
     website?: string | undefined;
     addressLine2?: string | undefined;
@@ -289,9 +290,9 @@ export declare const beneficialOwnerSchema: z.ZodObject<{
     city: string;
     state: string;
     ssn: string;
+    ownershipPercentage: string;
     firstName: string;
     lastName: string;
-    ownershipPercentage: string;
     dateOfBirth: string;
     postalCode: string;
 }, {
@@ -301,9 +302,9 @@ export declare const beneficialOwnerSchema: z.ZodObject<{
     city: string;
     state: string;
     ssn: string;
+    ownershipPercentage: string;
     firstName: string;
     lastName: string;
-    ownershipPercentage: string;
     dateOfBirth: string;
     postalCode: string;
 }>;

@@ -32,7 +32,7 @@ function sectionStatus(status: OnboardingStatus, step: OnboardingStep): SectionS
 }
 
 /** True when the given section counts as finished for resume purposes. */
-export function isSectionComplete(status: OnboardingStatus, step: OnboardingStep): boolean {
+export function isOnboardingSectionComplete(status: OnboardingStatus, step: OnboardingStep): boolean {
   return done(sectionStatus(status, step))
 }
 
@@ -58,9 +58,9 @@ function requirementToStep(requirement: string): OnboardingStep {
  *    that is not Completed.
  * 4. If everything is complete, stay on documents (the last section).
  */
-export function resolveResumeStep(status: OnboardingStatus): OnboardingStep {
+export function resolveOnboardingResumeStep(status: OnboardingStatus): OnboardingStep {
   // 1. Business gates everything else.
-  if (!isSectionComplete(status, 'business')) return 'business'
+  if (!isOnboardingSectionComplete(status, 'business')) return 'business'
 
   // 2. Capability errors -> action_required section wins. Walk sections in order
   //    so the earliest action-required section is picked.
@@ -76,7 +76,7 @@ export function resolveResumeStep(status: OnboardingStatus): OnboardingStep {
   }
 
   // 3. First not-Completed section in canonical order.
-  const next = ONBOARDING_STEPS.find((step) => !isSectionComplete(status, step))
+  const next = ONBOARDING_STEPS.find((step) => !isOnboardingSectionComplete(status, step))
   if (next) return next
 
   // 4. All complete.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { createClient, mock, resolveResumeStep } from '../src/core/client'
+import { createClient, mock, resolveOnboardingResumeStep } from '../src/core/client'
 import { BisonApiError } from '../src/core/transport'
 import type { Scope } from '../src/core/scope'
 
@@ -25,31 +25,30 @@ const business = {
 describe('onboarding flow (mock)', () => {
   test('fresh status: sections NotStarted, resume = business', async () => {
     const c = client()
-    const status = await c.onboarding.getStates(wio)
+    const status = await c.getOnboardingStatus(wio)
     expect(status.businessProfileStatus).toBe('NotStarted')
     expect(status.isComplete).toBe(false)
-    expect(resolveResumeStep(status)).toBe('business')
+    expect(resolveOnboardingResumeStep(status)).toBe('business')
   })
 
   test('business submit creates the Moov account and completes the section', async () => {
     const c = client()
-    const result = await c.onboarding.submit(wio, {
+    const result = await c.submitOnboardingSection(wio, {
       step: 'business',
       data: { ...business, selectedPaymentMethods: ['ach'] },
     })
     expect(result.success).toBe(true)
     expect(result.moovAccountId).toBeTruthy()
-    const status = await c.onboarding.getStates(wio)
+    const status = await c.getOnboardingStatus(wio)
     expect(status.businessProfileStatus).toBe('Completed')
-    expect(resolveResumeStep(status)).toBe('officer')
+    expect(resolveOnboardingResumeStep(status)).toBe('officer')
   })
 })
 
 describe('banking eligibility & guards (mock)', () => {
   test('adding a bank before business profile is a 422 eligibility error', async () => {
     const c = client()
-    const err = await c.banking
-      .register(wio, {
+    const err = await c.registerBankAccount(wio, {
         method: 'manual',
         holderName: 'Bison Energy LLC',
         routingNumber: '021000021',
@@ -63,8 +62,8 @@ describe('banking eligibility & guards (mock)', () => {
 
   test('after business profile, first manual account is unverified and auto-default; re-add is 409', async () => {
     const c = client()
-    await c.onboarding.submit(wio, { step: 'business', data: { ...business, selectedPaymentMethods: ['ach'] } })
-    const account = await c.banking.register(wio, {
+    await c.submitOnboardingSection(wio, { step: 'business', data: { ...business, selectedPaymentMethods: ['ach'] } })
+    const account = await c.registerBankAccount(wio, {
       method: 'manual',
       holderName: 'Bison Energy LLC',
       routingNumber: '021000021',
@@ -72,8 +71,7 @@ describe('banking eligibility & guards (mock)', () => {
     })
     expect(account.isVerified).toBe(false)
     expect(account.isDefault).toBe(true)
-    const dup = await c.banking
-      .register(wio, {
+    const dup = await c.registerBankAccount(wio, {
         method: 'manual',
         holderName: 'Bison Energy LLC',
         routingNumber: '021000021',
@@ -85,17 +83,17 @@ describe('banking eligibility & guards (mock)', () => {
 
   test('micro-deposit verify accepts MV1234, rejects a wrong code', async () => {
     const c = client()
-    await c.onboarding.submit(wio, { step: 'business', data: { ...business, selectedPaymentMethods: ['ach'] } })
-    const account = await c.banking.register(wio, {
+    await c.submitOnboardingSection(wio, { step: 'business', data: { ...business, selectedPaymentMethods: ['ach'] } })
+    const account = await c.registerBankAccount(wio, {
       method: 'manual',
       holderName: 'Bison Energy LLC',
       routingNumber: '021000021',
       accountNumber: '1234567890',
     })
-    const bad = await c.banking.completeVerification(wio, account.id, { code: 'MV9999' }).catch((e: unknown) => e)
+    const bad = await c.completeBankAccountVerification(wio, account.id, { code: 'MV9999' }).catch((e: unknown) => e)
     expect((bad as BisonApiError).status).toBe(400)
-    await c.banking.completeVerification(wio, account.id, { code: 'MV1234' })
-    const [verified] = await c.banking.list(wio)
+    await c.completeBankAccountVerification(wio, account.id, { code: 'MV1234' })
+    const [verified] = await c.getBankAccounts(wio)
     expect(verified.isVerified).toBe(true)
   })
 })

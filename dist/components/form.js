@@ -83,6 +83,18 @@ export function setFieldValues(root, values) {
             control.value = v;
     });
 }
+/** Parse an attribute as JSON; absent or invalid JSON yields undefined. */
+export function parseJsonAttribute(host, name) {
+    const raw = host.getAttribute(name);
+    if (!raw)
+        return undefined;
+    try {
+        return JSON.parse(raw);
+    }
+    catch {
+        return undefined;
+    }
+}
 /** Shows per-field errors and clears fields not present in the map. */
 export function showErrors(root, errors) {
     root.querySelectorAll('.bison-field').forEach((field) => {

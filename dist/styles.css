@@ -2,8 +2,7 @@
  * bison-jib-sdk — opt-in starter stylesheet.
  *
  * Ships NOTHING by default. Import it explicitly to get a clean, accessible
- * default look for <bison-onboarding>, <bison-onboarding-step> and
- * <bison-bank-crud>:
+ * default look for <bison-onboarding>, <bison-onboarding-partial> and <bison-bank-accounts>:
  *
  *     import 'bison-jib-sdk/styles.css'
  *   or
@@ -125,8 +124,8 @@
    The custom elements are inline by default (undefined-element behavior);
    make them block flow containers. */
 bison-onboarding,
-bison-onboarding-step,
-bison-bank-crud {
+bison-onboarding-partial,
+bison-bank-accounts {
   display: block;
   font-family: var(--bison-font);
   color: var(--bison-text);
@@ -135,7 +134,7 @@ bison-bank-crud {
 }
 
 .bison-onboarding,
-.bison-bank-crud {
+.bison-bank-accounts {
   max-width: 40rem;
   margin-inline: auto;
 }
@@ -280,7 +279,7 @@ bison-bank-crud {
 }
 
 .bison-field__input,
-.bison-bank-crud__input {
+.bison-bank-accounts__input {
   width: 100%;
   box-sizing: border-box;
   min-height: var(--bison-field-h);
@@ -300,13 +299,13 @@ textarea.bison-field__input {
 .bison-field__input::placeholder { color: var(--bison-text-muted); opacity: 0.7; }
 
 .bison-field__input:hover,
-.bison-bank-crud__input:hover { border-color: var(--bison-accent); }
+.bison-bank-accounts__input:hover { border-color: var(--bison-accent); }
 
 .bison-field__input:focus-visible,
-.bison-bank-crud__input:focus-visible,
+.bison-bank-accounts__input:focus-visible,
 .bison-onboarding__button:focus-visible,
-.bison-bank-crud__button:focus-visible,
-.bison-bank-crud__row:focus-visible {
+.bison-bank-accounts__button:focus-visible,
+.bison-bank-accounts__row:focus-visible {
   outline: 2px solid var(--bison-focus-ring);
   outline-offset: 2px;
   border-color: var(--bison-accent);
@@ -322,14 +321,14 @@ textarea.bison-field__input {
 
 .bison-field__error,
 .bison-onboarding__error,
-.bison-bank-crud__error {
+.bison-bank-accounts__error {
   margin: 0;
   color: var(--bison-error);
   font-size: 0.8rem;
   font-weight: 500;
 }
 .bison-onboarding__error,
-.bison-bank-crud__error {
+.bison-bank-accounts__error {
   grid-column: 1 / -1;
   padding: 0.6rem 0.8rem;
   background: var(--bison-error-soft);
@@ -338,7 +337,7 @@ textarea.bison-field__input {
 }
 .bison-field__error[hidden],
 .bison-onboarding__error[hidden],
-.bison-bank-crud__error[hidden] { display: none; }
+.bison-bank-accounts__error[hidden] { display: none; }
 
 /* ── Actions & buttons ─────────────────────────────────────────────────── */
 .bison-onboarding__actions {
@@ -351,7 +350,7 @@ textarea.bison-field__input {
 }
 
 .bison-onboarding__button,
-.bison-bank-crud__button {
+.bison-bank-accounts__button {
   appearance: none;
   cursor: pointer;
   display: inline-flex;
@@ -370,25 +369,25 @@ textarea.bison-field__input {
   transition: background var(--bison-ease), color var(--bison-ease), border-color var(--bison-ease), transform var(--bison-ease);
 }
 .bison-onboarding__button:hover,
-.bison-bank-crud__button:hover { background: var(--bison-accent-hover); }
+.bison-bank-accounts__button:hover { background: var(--bison-accent-hover); }
 .bison-onboarding__button:active,
-.bison-bank-crud__button:active { transform: translateY(1px); }
+.bison-bank-accounts__button:active { transform: translateY(1px); }
 .bison-onboarding__button:disabled,
-.bison-bank-crud__button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.bison-bank-accounts__button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 
 /* Secondary / low-emphasis buttons: Back, Remove, Cancel, ghost actions. */
 .bison-onboarding__button--back,
 .bison-onboarding__button--remove,
-.bison-bank-crud__button--cancel,
-.bison-bank-crud__button--ghost {
+.bison-bank-accounts__button--cancel,
+.bison-bank-accounts__button--ghost {
   color: var(--bison-text);
   background: transparent;
   border-color: var(--bison-border-strong);
 }
 .bison-onboarding__button--back:hover,
 .bison-onboarding__button--remove:hover,
-.bison-bank-crud__button--cancel:hover,
-.bison-bank-crud__button--ghost:hover {
+.bison-bank-accounts__button--cancel:hover,
+.bison-bank-accounts__button--ghost:hover {
   background: var(--bison-surface);
   border-color: var(--bison-accent);
 }
@@ -445,15 +444,24 @@ textarea.bison-field__input {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Banking — <bison-bank-crud>
+   Banking — <bison-bank-accounts>
    ══════════════════════════════════════════════════════════════════════════ */
 
-.bison-bank-crud {
+.bison-bank-accounts {
   display: grid;
   gap: var(--bison-gap);
 }
 
-.bison-bank-crud__list {
+.bison-partial__banking {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--bison-gap);
+}
+
+.bison-partial__banking-status { margin: 0; color: var(--bison-text-muted); }
+.bison-partial__banking-status--error { color: var(--bison-error); }
+
+.bison-bank-accounts__list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -463,7 +471,7 @@ textarea.bison-field__input {
 
 /* One account row. data-verified / data-default flag status; data-provider
    lets consumers brand per provider. */
-.bison-bank-crud__row {
+.bison-bank-accounts__row {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -475,24 +483,24 @@ textarea.bison-field__input {
   box-shadow: var(--bison-shadow);
   transition: border-color var(--bison-ease), box-shadow var(--bison-ease);
 }
-.bison-bank-crud__row:hover { border-color: var(--bison-border-strong); }
+.bison-bank-accounts__row:hover { border-color: var(--bison-border-strong); }
 
 /* Default account gets an accent edge. */
-.bison-bank-crud__row[data-default] {
+.bison-bank-accounts__row[data-default] {
   border-color: var(--bison-accent);
   box-shadow: var(--bison-shadow), inset 3px 0 0 var(--bison-accent);
 }
 
 /* Bank glyph / avatar. */
-.bison-bank-crud__row::before {
+.bison-bank-accounts__row::before {
   content: "\1F3E6"; /* bank emoji as a lightweight default mark */
   font-size: 1.15rem;
   line-height: 1;
 }
 
-.bison-bank-crud__row-main { min-width: 0; display: grid; gap: 0.15rem; }
-.bison-bank-crud__bank-name { font-weight: 600; color: var(--bison-text); }
-.bison-bank-crud__account-number {
+.bison-bank-accounts__row-main { min-width: 0; display: grid; gap: 0.15rem; }
+.bison-bank-accounts__bank-name { font-weight: 600; color: var(--bison-text); }
+.bison-bank-accounts__account-number {
   font-family: var(--bison-font-mono);
   font-size: 0.85rem;
   color: var(--bison-text-muted);
@@ -500,8 +508,8 @@ textarea.bison-field__input {
 }
 
 /* Badges — verified / default. */
-.bison-bank-crud__badges { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
-.bison-bank-crud__badge {
+.bison-bank-accounts__badges { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.bison-bank-accounts__badge {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -512,21 +520,23 @@ textarea.bison-field__input {
   line-height: 1.4;
   border: 1px solid transparent;
 }
-.bison-bank-crud__badge--verified { color: var(--bison-success); background: var(--bison-success-soft); border-color: color-mix(in srgb, var(--bison-success) 35%, transparent); }
-.bison-bank-crud__badge--verified::before { content: "\2713"; }
-.bison-bank-crud__badge--unverified { color: var(--bison-warning); background: var(--bison-warning-soft); border-color: color-mix(in srgb, var(--bison-warning) 35%, transparent); }
-.bison-bank-crud__badge--default { color: var(--bison-accent); background: var(--bison-accent-soft); border-color: color-mix(in srgb, var(--bison-accent) 35%, transparent); }
+.bison-bank-accounts__badge--verified { color: var(--bison-success); background: var(--bison-success-soft); border-color: color-mix(in srgb, var(--bison-success) 35%, transparent); }
+.bison-bank-accounts__badge--verified::before { content: "\2713"; }
+.bison-bank-accounts__badge--unverified { color: var(--bison-warning); background: var(--bison-warning-soft); border-color: color-mix(in srgb, var(--bison-warning) 35%, transparent); }
+.bison-bank-accounts__badge--default { color: var(--bison-accent); background: var(--bison-accent-soft); border-color: color-mix(in srgb, var(--bison-accent) 35%, transparent); }
 
 /* Convenience: derive badge visibility straight from row data-attributes,
    so a minimal component that only sets data-* still shows status. */
-.bison-bank-crud__row[data-verified] .bison-bank-crud__badge--unverified,
-.bison-bank-crud__row:not([data-verified]) .bison-bank-crud__badge--verified { display: none; }
-.bison-bank-crud__row:not([data-default]) .bison-bank-crud__badge--default { display: none; }
+.bison-bank-accounts__row[data-verified] .bison-bank-accounts__badge--unverified,
+.bison-bank-accounts__row:not([data-verified]) .bison-bank-accounts__badge--verified { display: none; }
+.bison-bank-accounts__row:not([data-default]) .bison-bank-accounts__badge--default { display: none; }
 
-.bison-bank-crud__row-actions { display: flex; gap: 0.35rem; align-items: center; }
+.bison-bank-accounts__row-actions { display: flex; gap: 0.35rem; align-items: center; }
+.bison-bank-accounts__warning { margin: 0; color: var(--bison-warning); }
+.bison-bank-accounts__success { margin: 0; padding: var(--bison-pad); color: var(--bison-success); background: var(--bison-success-soft); border-radius: var(--bison-radius); }
 
 /* Empty state. */
-.bison-bank-crud__empty-state {
+.bison-bank-accounts__empty-state {
   display: grid;
   place-items: center;
   gap: var(--bison-gap-sm);
@@ -539,7 +549,7 @@ textarea.bison-field__input {
 }
 
 /* Add-account form. */
-.bison-bank-crud__form {
+.bison-bank-accounts__form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   gap: var(--bison-gap);
@@ -549,7 +559,19 @@ textarea.bison-field__input {
   border-radius: var(--bison-radius);
   box-shadow: var(--bison-shadow);
 }
-.bison-bank-crud__actions {
+.bison-bank-accounts__form > .bison-bank-accounts__button { grid-column: 1 / -1; justify-self: end; }
+.bison-bank-accounts__add { display: grid; gap: var(--bison-gap); }
+.bison-bank-accounts__method-chooser,
+.bison-bank-accounts__verify-actions { display: flex; flex-wrap: wrap; gap: var(--bison-gap-sm); }
+.bison-bank-accounts__verify {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--bison-gap-sm);
+  padding-top: var(--bison-gap);
+  border-top: 1px solid var(--bison-border);
+}
+.bison-bank-accounts__verify-input { max-width: 12rem; font-family: var(--bison-font-mono); letter-spacing: 0.2em; }
+.bison-bank-accounts__actions {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
@@ -558,8 +580,8 @@ textarea.bison-field__input {
 }
 
 /* ── Verify (micro-deposit) dialog ─────────────────────────────────────── */
-.bison-bank-crud__dialog,
-dialog.bison-bank-crud__dialog {
+.bison-bank-accounts__dialog,
+dialog.bison-bank-accounts__dialog {
   width: min(26rem, calc(100vw - 2rem));
   margin: auto;
   padding: 0;
@@ -569,14 +591,14 @@ dialog.bison-bank-crud__dialog {
   border-radius: var(--bison-radius);
   box-shadow: var(--bison-shadow-pop);
 }
-.bison-bank-crud__dialog::backdrop { background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(2px); }
+.bison-bank-accounts__dialog::backdrop { background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(2px); }
 
-.bison-bank-crud__dialog-body { display: grid; gap: var(--bison-gap); padding: var(--bison-pad); }
-.bison-bank-crud__dialog-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
-.bison-bank-crud__dialog-intro { margin: 0; color: var(--bison-text-muted); font-size: 0.9rem; }
+.bison-bank-accounts__dialog-body { display: grid; gap: var(--bison-gap); padding: var(--bison-pad); }
+.bison-bank-accounts__dialog-title { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.bison-bank-accounts__dialog-intro { margin: 0; color: var(--bison-text-muted); font-size: 0.9rem; }
 
 /* The MV#### verification code input reads as a code entry. */
-.bison-bank-crud__code-input {
+.bison-bank-accounts__code-input {
   width: 100%;
   box-sizing: border-box;
   min-height: var(--bison-field-h);
@@ -591,15 +613,15 @@ dialog.bison-bank-crud__dialog {
   border: 1px solid var(--bison-border-strong);
   border-radius: var(--bison-radius-sm);
 }
-.bison-bank-crud__code-input:focus-visible {
+.bison-bank-accounts__code-input:focus-visible {
   outline: 2px solid var(--bison-focus-ring);
   outline-offset: 2px;
   border-color: var(--bison-accent);
 }
 
 /* ── Provider hints (data-provider) ────────────────────────────────────── */
-.bison-bank-crud[data-provider="column"] { --bison-accent: #3b5bdb; --bison-accent-hover: #2f49af; --bison-accent-soft: #eef1fd; }
-.bison-bank-crud[data-provider="moov"] { /* keep the amber default */ }
+.bison-bank-accounts__add[data-provider="column"] { --bison-accent: #3b5bdb; --bison-accent-hover: #2f49af; --bison-accent-soft: #eef1fd; }
+.bison-bank-accounts__add[data-provider="moov"] { /* keep the amber default */ }
 
 /* ── Reduced motion ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -609,13 +631,13 @@ dialog.bison-bank-crud__dialog {
 /* ── Narrow screens ────────────────────────────────────────────────────── */
 @media (max-width: 30rem) {
   .bison-onboarding__form,
-  .bison-bank-crud__form,
+  .bison-bank-accounts__form,
   .bison-onboarding__repeat-item,
   .bison-step { grid-template-columns: 1fr; }
   .bison-onboarding__actions { justify-content: stretch; }
   .bison-onboarding__button,
-  .bison-bank-crud__button { flex: 1 1 auto; }
+  .bison-bank-accounts__button { flex: 1 1 auto; }
   .bison-onboarding__button--back { margin-right: 0; }
-  .bison-bank-crud__row { grid-template-columns: auto 1fr; }
-  .bison-bank-crud__row-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .bison-bank-accounts__row { grid-template-columns: auto 1fr; }
+  .bison-bank-accounts__row-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }

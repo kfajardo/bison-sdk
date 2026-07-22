@@ -1,4 +1,4 @@
-# Bison Banking (Bank Account CRUD) — Implementation Spec
+# Bison Banking (Bank Account Management) — Implementation Spec
 
 Current-state specification of bank-account CRUD across the Bison JIB Pay frontend
 (`bison-jib-web-flow`) and backend (`bison-jib-pay-api`): listing, adding (Plaid + manual),
@@ -20,10 +20,10 @@ record type (`BankAccount` row / `BankAccountDto`) fronts three payment provider
 
 | Concept | Meaning |
 |---|---|
-| **Provider** | `Column`, `Moov`, `Increase` (`PaymentPlatformEnums.cs:6-11`). Moov = full flow (manual entry + micro-deposit verification + approval gating). Column/Increase = "direct-entry" (Plaid-only, no verify step, no approval gate). |
+| **Provider** | Backend-selected and opaque to SDK consumers. Full-service providers support manual entry, verification, and approval gating; direct-entry providers use Plaid with no verification step. |
 | **Scope** | WIO self (`/api/wios/{id}/bank-accounts*`), entity/Partner (`/api/wios/{wioId}/entities/{entityId}/bank-accounts*`), Operator (`/api/operators/{id}/bank-accounts*`), public payer (`/api/pay/{token}/...`, unauthenticated). |
 | **Add methods** | Plaid Link (instant-verified) and manual routing/account entry (Moov only; micro-deposit verify). |
-| **Provider reality** | `PaymentPlatformSettings.ActiveProvider` defaults to `Column` (`Features/BisonJibPay.PaymentPlatform/Domain/Configuration/PaymentPlatformSettings.cs:14`), but the live CRUD paths are Moov-centric. `Increase` is an enum value with **no provider implementation** in the tree. |
+| **Provider reality** | `PaymentPlatformSettings.ActiveProvider` selects the implementation; the SDK exposes provider identifiers as opaque strings. |
 
 The Moov Drop `<wio-bank-account>` web component is loaded
 (`src/hooks/use_moov_scripts.ts:10`) but **never rendered** — bank linking is Plaid + REST, not
@@ -179,7 +179,7 @@ SwiftCode?
 PaymentPlatformProviderType? Provider   // create: override; update: accepted but ignored
 [StringLength(200)] AccountHolderName?
 bool IsDefault = false
-IdempotencyKey?                    // required by Increase
+IdempotencyKey?                    // required by some providers
 ```
 
 `ManualBankAccountRequest` (`MoovBankAccountDTOs.cs:104-139`, Moov-only):
@@ -249,7 +249,7 @@ bankAccountFormSchema (:40): accountName ≤200, bankName ≤200, routingNumber,
 
 ### 4.4 Frontend enums
 
-`PaymentProvider {Column:0, Moov:1, Increase:2}`, `BankAccountType {Checking:0, Savings:1}`
+`PaymentProvider` is backend-selected; `BankAccountType {Checking:0, Savings:1}`
 (`src/types/bank_account.ts:4,12`); `CounterpartyEntityType {WIO:0, Operator:1}`
 (`src/types/plaid.ts:37`);
 `BankVerificationStatus = 'new' | 'pending' | 'verified' | 'errored' | 'max-attempts-exceeded'`
@@ -268,7 +268,7 @@ table **`BankAccounts`** (renamed from `PaymentCounterparties` by migration
 EntityType   CounterpartyEntityType     // Wio | Operator
 EntityId     Guid                       // WIO-scoped rows store the Partner id (see §6.1)
 ExternalId   string                     // provider id: Column "cpty_...", Moov bankAccountID
-Provider     PaymentPlatformProviderType // Column | Moov | Increase
+Provider     PaymentPlatformProviderType // opaque provider identifier
 AccountType? // Checking=0 | Savings=1
 IsDefault    bit    // composite index IX_BankAccounts_EntityType_EntityId_IsDefault
 IsVerified   bit
@@ -547,8 +547,8 @@ Every mutating bank operation is OTP-gated via `requestOtp({featureKey,...})`:
 11. **Three divergent manual-entry validators** exist in the frontend (§4.3) — the canonical
     one is `bank_account_validation.ts` (ABA checksum, 4–20 digits); the operator legacy modal
     (4–17 + confirm field) and entity link modal (no checksum) differ.
-12. **`Increase` provider is unimplemented** (enum only). Cross-processor Plaid fan-out is
-    behind `CrossProcessorRegistration.Enabled=false` — default behavior is Moov-only.
+12. **Additional direct-entry provider implementations may be unavailable.** Cross-processor
+    Plaid fan-out is behind `CrossProcessorRegistration.Enabled=false`.
 13. **Duplicate manual add returns 409** `"This bank account is already registered."` — keyed
     on provider `ExternalId` (unique constraint), so the same real-world account re-linked via
     a different provider is not a duplicate.

@@ -41,6 +41,8 @@ export interface MockState {
   controlOfficerStatus: SectionStatus
   beneficialOwnersStatus: SectionStatus
   processingVolumeStatus: SectionStatus
+  /** Partial onboarding does not require the legacy volume step. */
+  partialOnboarding: boolean
   selectedPaymentMethods: PaymentMethodKey[]
   /** Capabilities start pending, flip enabled after beneficial-owners POST (§6.3). */
   capabilitiesRequested: boolean
@@ -71,6 +73,7 @@ export function createMockState(seed?: Partial<MockState>): MockState {
     controlOfficerStatus: 'NotStarted',
     beneficialOwnersStatus: 'NotStarted',
     processingVolumeStatus: 'NotStarted',
+    partialOnboarding: false,
     selectedPaymentMethods: ['ach'],
     capabilitiesRequested: false,
     documents: [],
@@ -100,7 +103,7 @@ function buildStatus(s: MockState): OnboardingStatus {
     s.businessProfileStatus === 'Completed' &&
     s.controlOfficerStatus === 'Completed' &&
     s.beneficialOwnersStatus === 'Completed' &&
-    s.processingVolumeStatus === 'Completed'
+    (s.partialOnboarding || s.processingVolumeStatus === 'Completed')
   const enabled = s.capabilitiesRequested
   return {
     entityId: 'entity_mock',
@@ -110,7 +113,7 @@ function buildStatus(s: MockState): OnboardingStatus {
     beneficialOwnersStatus: s.beneficialOwnersStatus,
     processingVolumeStatus: s.processingVolumeStatus,
     isComplete,
-    hasExternalAccount: s.banks.length > 0,
+    hasExternalAccount: Boolean(s.moovAccountId),
     bankAccountEligibility: {
       isSupported: s.businessProfileStatus === 'Completed' || s.hasUsAddress,
       supportedCountryCodes: ['US'],
@@ -123,6 +126,11 @@ function buildStatus(s: MockState): OnboardingStatus {
     selectedPaymentMethods: s.selectedPaymentMethods,
     controlOfficerRepresentativeId: s.controlOfficerRepresentativeId,
     ownerRepresentativeIds: s.ownerRepresentativeIds,
+    readinessState: isComplete && enabled
+      ? 'Ready'
+      : s.businessProfileStatus === 'NotStarted'
+        ? 'MissingProfile'
+        : 'MissingProviderInput',
   }
 }
 
@@ -234,10 +242,12 @@ function handleKyb(s: MockState, section: string, method: string, req: RequestOp
     const firstCall = !s.moovAccountId
     if (firstCall) s.moovAccountId = `moov_${++s.seq}` // First POST creates the Moov account (§6.1).
     if (data.selectedPaymentMethods?.length) s.selectedPaymentMethods = data.selectedPaymentMethods
+    if (data.termsAccepted) s.partialOnboarding = true
     if (data.ein) s.taxIdProvided = true
     // Store a redacted copy (EIN stripped, never persisted).
-    const { ein: _ein, ...rest } = data
+    const { ein: _ein, controlOfficer, ...rest } = data
     s.business = rest as Record<string, unknown>
+    if (controlOfficer) saveOfficer(s, controlOfficer)
     s.businessProfileStatus = 'Completed' // NotStarted -> Completed directly (§6.8).
     const result: SaveSectionResult = { success: true, moovAccountId: s.moovAccountId }
     return result
@@ -248,13 +258,7 @@ function handleKyb(s: MockState, section: string, method: string, req: RequestOp
       if (!s.officer) return null
       return { ...s.officer, birthDateProvided: s.birthDateProvided, governmentIdProvided: s.governmentIdProvided }
     }
-    const data = json as ControlOfficerPayload
-    if (data.birthYear || data.birthMonth || data.birthDay) s.birthDateProvided = true
-    if (data.ssn) s.governmentIdProvided = true
-    const { ssn: _ssn, ...rest } = data
-    s.officer = rest as Record<string, unknown>
-    s.controlOfficerRepresentativeId = s.controlOfficerRepresentativeId ?? `rep_${++s.seq}`
-    s.controlOfficerStatus = 'Completed'
+    saveOfficer(s, json as ControlOfficerPayload)
     const result: SaveSectionResult = { success: true, representativeId: s.controlOfficerRepresentativeId }
     return result
   }
@@ -301,6 +305,15 @@ function handleKyb(s: MockState, section: string, method: string, req: RequestOp
   }
 
   throw new BisonApiError(404, `mock: unknown kyb section ${section}`)
+}
+
+function saveOfficer(s: MockState, data: ControlOfficerPayload): void {
+  if (data.birthYear || data.birthMonth || data.birthDay) s.birthDateProvided = true
+  if (data.ssn) s.governmentIdProvided = true
+  const { ssn: _ssn, ...rest } = data
+  s.officer = rest as Record<string, unknown>
+  s.controlOfficerRepresentativeId = s.controlOfficerRepresentativeId ?? `rep_${++s.seq}`
+  s.controlOfficerStatus = 'Completed'
 }
 
 // ── Banking handler ──────────────────────────────────────────────────────────────

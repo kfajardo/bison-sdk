@@ -1,3 +1,3 @@
 export { BisonOnboarding } from './onboarding.js';
-export { BisonOnboardingStep } from './steps.js';
-export { BisonBankCrud } from './bank_crud.js';
+export { BisonOnboardingPartial } from './partial.js';
+export { BisonBankAccounts } from './bank_accounts.js';

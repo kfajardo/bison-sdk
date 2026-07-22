@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import type { BeneficialOwnerPayload, BusinessProfilePayload, ControlOfficerPayload, OnboardingStep, OnboardingSubmit, ProcessingVolumePayload } from '../core/types.js';
-import type { Persona } from '../core/scope.js';
 import { type StepErrors } from '../validation/index.js';
 import { type FieldSpec } from './form.js';
-import type { BisonSectionClient } from './onboarding.js';
 export interface SectionSpec {
     step: OnboardingStep;
     title: string;
@@ -42,25 +40,3 @@ export declare function buildBeneficialOwner(r: Record<string, string>): Benefic
 export declare function buildProcessingVolume(r: Record<string, string>): ProcessingVolumePayload;
 /** Build the OnboardingSubmit for a form-backed section from its collected record(s). */
 export declare function buildSubmit(step: OnboardingStep, record: Record<string, string>, owners?: Record<string, string>[]): OnboardingSubmit;
-/**
- * <bison-onboarding-step step="business|officer|owners|volume|documents"
- *   persona scope-id entity-id? base-url>
- * Renders ONE section standalone with a `.value` getter, `.validate()` method, and
- * its own submit button. Set `.client` to reuse a client instance (tests).
- * Events: bison-before-submit (cancellable), bison-submit-success, bison-submit-error.
- */
-export declare class BisonOnboardingStep extends HTMLElement {
-    client?: BisonSectionClient;
-    private owners;
-    private busy;
-    get step(): OnboardingStep;
-    get persona(): Persona;
-    private get scope();
-    connectedCallback(): void;
-    private render;
-    private form;
-    get value(): Record<string, string> | Record<string, string>[];
-    /** Validates against the section schema, renders field errors, returns them ({} when valid). */
-    validate(): StepErrors;
-    private submit;
-}

@@ -18,5 +18,7 @@ export declare function readFields(root: HTMLElement): Record<string, string>;
 export declare function readFiles(root: HTMLElement, name: string): File[];
 /** Prefill non-file controls within root from a value map (resume hydration). */
 export declare function setFieldValues(root: HTMLElement, values: Record<string, string | undefined>): void;
+/** Parse an attribute as JSON; absent or invalid JSON yields undefined. */
+export declare function parseJsonAttribute<T>(host: HTMLElement, name: string): T | undefined;
 /** Shows per-field errors and clears fields not present in the map. */
 export declare function showErrors(root: HTMLElement, errors: Record<string, string>): void;

@@ -1,8 +1,7 @@
 import type { AuthProvider, Transport } from './transport.js';
 import type { Scope } from './scope.js';
-import type { BankRegister, CompleteVerificationPayload, MoovFilePurpose, OnboardingStep, OnboardingSubmit, PaymentMethodKey } from './types.js';
-import { resolveResumeStep } from './resume.js';
-export { resolveResumeStep, isSectionComplete } from './resume.js';
+import type { BankAccount, BankRegister, CompleteVerificationPayload, MoovFilePurpose, OnboardingStep, OnboardingSubmit, PaymentMethodKey, PlaidRegisterResult } from './types.js';
+export { resolveOnboardingResumeStep, isOnboardingSectionComplete } from './resume.js';
 export { mock, createMockState, type MockState } from './mock.js';
 export type ClientConfig = {
     transport: Transport;
@@ -12,26 +11,29 @@ export type ClientConfig = {
     fetch?: typeof globalThis.fetch;
 };
 export declare function createClient(cfg: ClientConfig): {
-    onboarding: {
-        getUser: (opts?: {
-            email?: string;
-        }) => Promise<import("./types.js").UserInfo>;
-        getStates: (scope: Scope, step?: OnboardingStep) => Promise<unknown>;
-        submit: (scope: Scope, submit: OnboardingSubmit) => Promise<import("./types.js").SaveSectionResult>;
-        uploadDocument: (scope: Scope, file: File, purpose?: MoovFilePurpose, metadata?: string) => Promise<import("./types.js").DocumentUploadResult>;
-        getIndustries: (scope: Scope) => Promise<import("./types.js").Industry[]>;
-        getTosToken: () => Promise<import("./types.js").TosToken>;
-        savePaymentMethodCapabilities: (scope: Scope, methods: PaymentMethodKey[]) => Promise<unknown>;
-        resolveResumeStep: typeof resolveResumeStep;
+    getUser: (opts?: {
+        email?: string;
+    }) => Promise<import("./types.js").UserInfo>;
+    getOnboardingStatus: (scope: Scope) => Promise<import("./types.js").OnboardingStatus>;
+    getOnboardingSection: <Step extends OnboardingStep>(scope: Scope, step: Step) => Promise<import("./types.js").OnboardingSectionData[Step] | null>;
+    submitOnboardingSection: (scope: Scope, submit: OnboardingSubmit) => Promise<import("./types.js").SaveSectionResult>;
+    uploadOnboardingDocument: (scope: Scope, file: File, purpose?: MoovFilePurpose, metadata?: string) => Promise<import("./types.js").DocumentUploadResult>;
+    getBankAccounts: (scope: Scope) => Promise<BankAccount[]>;
+    getPlaidLinkToken: (scope: Scope) => Promise<import("./types.js").PlaidLinkToken>;
+    registerBankAccount: {
+        (scope: Scope, payload: Extract<BankRegister, {
+            method: "manual";
+        }>): Promise<BankAccount>;
+        (scope: Scope, payload: Extract<BankRegister, {
+            method: "plaid";
+        }>): Promise<PlaidRegisterResult>;
     };
-    banking: {
-        list: (scope: Scope) => Promise<import("./types.js").BankAccount[]>;
-        getPlaidToken: (scope: Scope) => Promise<import("./types.js").PlaidLinkToken>;
-        register: (scope: Scope, payload: BankRegister) => Promise<import("./types.js").BankAccount>;
-        initiateVerification: (scope: Scope, bankAccountId: string) => Promise<void>;
-        completeVerification: (scope: Scope, bankAccountId: string, payload: CompleteVerificationPayload) => Promise<void>;
-        setDefault: (scope: Scope, bankAccountId: string) => Promise<void>;
-        delete: (scope: Scope, bankAccountId: string) => Promise<void>;
-    };
+    initiateBankAccountVerification: (scope: Scope, bankAccountId: string) => Promise<void>;
+    completeBankAccountVerification: (scope: Scope, bankAccountId: string, payload: CompleteVerificationPayload) => Promise<void>;
+    setDefaultBankAccount: (scope: Scope, bankAccountId: string) => Promise<void>;
+    deleteBankAccount: (scope: Scope, bankAccountId: string) => Promise<void>;
+    getOnboardingIndustries: (scope: Scope) => Promise<import("./types.js").Industry[]>;
+    getOnboardingTermsToken: () => Promise<import("./types.js").TosToken>;
+    saveOnboardingPaymentMethods: (scope: Scope, methods: PaymentMethodKey[]) => Promise<void>;
 };
 export type BisonClient = ReturnType<typeof createClient>;

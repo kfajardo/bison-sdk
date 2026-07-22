@@ -1,6 +1,6 @@
 import type { OnboardingStatus, OnboardingStep } from './types.js';
 /** True when the given section counts as finished for resume purposes. */
-export declare function isSectionComplete(status: OnboardingStatus, step: OnboardingStep): boolean;
+export declare function isOnboardingSectionComplete(status: OnboardingStatus, step: OnboardingStep): boolean;
 /**
  * Which step a returning user should resume at.
  *
@@ -14,4 +14,4 @@ export declare function isSectionComplete(status: OnboardingStatus, step: Onboar
  *    that is not Completed.
  * 4. If everything is complete, stay on documents (the last section).
  */
-export declare function resolveResumeStep(status: OnboardingStatus): OnboardingStep;
+export declare function resolveOnboardingResumeStep(status: OnboardingStatus): OnboardingStep;

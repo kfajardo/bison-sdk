@@ -19,15 +19,17 @@ const SECTION_PATH = {
     volume: 'processing-volume',
     documents: 'documents',
 };
-export function getOnboardingStates(transport, scope, step) {
-    const base = kybBase(scope);
-    if (!step)
-        return transport(`${base}/status`);
-    return transport(`${base}/${SECTION_PATH[step]}`);
+/** Load the full onboarding status. */
+export function getOnboardingStatus(transport, scope) {
+    return transport(`${kybBase(scope)}/status`);
+}
+/** Load one saved onboarding section. */
+export function getOnboardingSection(transport, scope, step) {
+    return transport(`${kybBase(scope)}/${SECTION_PATH[step]}`);
 }
 /** POST the matching section endpoint. Returns SaveSectionResult (business also
  *  carries moovAccountId on first save). */
-export function submitOnboarding(transport, scope, submit) {
+export function submitOnboardingSection(transport, scope, submit) {
     const base = kybBase(scope);
     switch (submit.step) {
         case 'business':
@@ -45,14 +47,19 @@ export function submitOnboarding(transport, scope, submit) {
             return transport(`${base}/beneficial-owners`, {
                 method: 'POST',
                 json: submit.data,
-                query: submit.noOwnersAbove25 ? { noOwnersAbove25: true } : undefined,
+                query: {
+                    ...(submit.noOwnersAbove25 ? { noOwnersAbove25: true } : {}),
+                    ...(submit.existingMappings?.length
+                        ? { existingMappingsJson: JSON.stringify(submit.existingMappings) }
+                        : {}),
+                },
             });
         case 'volume':
             return transport(`${base}/processing-volume`, { method: 'POST', json: submit.data });
     }
 }
 /** Multipart document upload. Purpose defaults to merchant_underwriting. */
-export function uploadDocument(transport, scope, file, purpose = 'merchant_underwriting', metadata) {
+export function uploadOnboardingDocument(transport, scope, file, purpose = 'merchant_underwriting', metadata) {
     const form = new FormData();
     form.append('file', file);
     form.append('purpose', purpose);
@@ -61,16 +68,16 @@ export function uploadDocument(transport, scope, file, purpose = 'merchant_under
     return transport(`${kybBase(scope)}/documents`, { method: 'POST', form });
 }
 /** GET the industry list for the scope's persona. */
-export function getIndustries(transport, scope) {
+export function getOnboardingIndustries(transport, scope) {
     const seg = scope.persona === 'operator' ? 'operators' : 'wios';
     return transport(`api/${seg}/kyb/industries`);
 }
 /** POST for a Moov ToS token. */
-export function getTosToken(transport) {
+export function getOnboardingTermsToken(transport) {
     return transport('api/moov/tos-token', { method: 'POST' });
 }
 /** Persist the selected payment-method capabilities for the scope. */
-export function savePaymentMethodCapabilities(transport, scope, methods) {
+export function saveOnboardingPaymentMethods(transport, scope, methods) {
     return transport(`${kybBase(scope)}/payment-method-capabilities`, {
         method: 'POST',
         json: { selectedPaymentMethods: methods },
@@ -82,13 +89,13 @@ export function getBankAccounts(transport, scope) {
     return transport(bankBase(scope));
 }
 /** POST a Plaid link token for the scope's entity. */
-export function getPlaidToken(transport, scope) {
+export function getPlaidLinkToken(transport, scope) {
     return transport('api/plaid/embeddable/create-token', {
         method: 'POST',
         query: { entityId: scope.entityId ?? scope.id },
     });
 }
-export function register(transport, scope, payload) {
+export function registerBankAccount(transport, scope, payload) {
     const { method, ...body } = payload;
     if (method === 'manual') {
         return transport(`${bankBase(scope)}/manual`, { method: 'POST', json: body });
@@ -100,13 +107,13 @@ export function register(transport, scope, payload) {
     });
 }
 /** POST to start micro-deposit verification for an account. */
-export function initiateVerification(transport, scope, bankAccountId) {
+export function initiateBankAccountVerification(transport, scope, bankAccountId) {
     return transport(`${bankBase(scope)}/${encodeURIComponent(bankAccountId)}/initiate-verification`, {
         method: 'POST',
     });
 }
 /** POST the micro-deposit code (MV#### or 4 digits) to complete verification. */
-export function completeVerification(transport, scope, bankAccountId, payload) {
+export function completeBankAccountVerification(transport, scope, bankAccountId, payload) {
     return transport(`${bankBase(scope)}/${encodeURIComponent(bankAccountId)}/complete-verification`, {
         method: 'POST',
         json: payload,

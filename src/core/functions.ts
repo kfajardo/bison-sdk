@@ -13,6 +13,7 @@ import type {
   Industry,
   MoovFilePurpose,
   OnboardingStatus,
+  OnboardingSectionData,
   OnboardingStep,
   OnboardingSubmit,
   PaymentMethodKey,
@@ -43,22 +44,23 @@ const SECTION_PATH: Record<OnboardingStep, string> = {
   documents: 'documents',
 }
 
-/** No step -> full status. With a step -> that section's saved data (or null). */
-export function getOnboardingStates(transport: Transport, scope: Scope): Promise<OnboardingStatus>
-export function getOnboardingStates(transport: Transport, scope: Scope, step: OnboardingStep): Promise<unknown>
-export function getOnboardingStates(
+/** Load the full onboarding status. */
+export function getOnboardingStatus(transport: Transport, scope: Scope): Promise<OnboardingStatus> {
+  return transport<OnboardingStatus>(`${kybBase(scope)}/status`)
+}
+
+/** Load one saved onboarding section. */
+export function getOnboardingSection<Step extends OnboardingStep>(
   transport: Transport,
   scope: Scope,
-  step?: OnboardingStep,
-): Promise<OnboardingStatus | unknown> {
-  const base = kybBase(scope)
-  if (!step) return transport<OnboardingStatus>(`${base}/status`)
-  return transport<unknown>(`${base}/${SECTION_PATH[step]}`)
+  step: Step,
+): Promise<OnboardingSectionData[Step] | null> {
+  return transport<OnboardingSectionData[Step] | null>(`${kybBase(scope)}/${SECTION_PATH[step]}`)
 }
 
 /** POST the matching section endpoint. Returns SaveSectionResult (business also
  *  carries moovAccountId on first save). */
-export function submitOnboarding(
+export function submitOnboardingSection(
   transport: Transport,
   scope: Scope,
   submit: OnboardingSubmit,
@@ -80,7 +82,12 @@ export function submitOnboarding(
       return transport<SaveSectionResult>(`${base}/beneficial-owners`, {
         method: 'POST',
         json: submit.data,
-        query: submit.noOwnersAbove25 ? { noOwnersAbove25: true } : undefined,
+        query: {
+          ...(submit.noOwnersAbove25 ? { noOwnersAbove25: true } : {}),
+          ...(submit.existingMappings?.length
+            ? { existingMappingsJson: JSON.stringify(submit.existingMappings) }
+            : {}),
+        },
       })
     case 'volume':
       return transport<SaveSectionResult>(`${base}/processing-volume`, { method: 'POST', json: submit.data })
@@ -88,7 +95,7 @@ export function submitOnboarding(
 }
 
 /** Multipart document upload. Purpose defaults to merchant_underwriting. */
-export function uploadDocument(
+export function uploadOnboardingDocument(
   transport: Transport,
   scope: Scope,
   file: File,
@@ -103,23 +110,23 @@ export function uploadDocument(
 }
 
 /** GET the industry list for the scope's persona. */
-export function getIndustries(transport: Transport, scope: Scope): Promise<Industry[]> {
+export function getOnboardingIndustries(transport: Transport, scope: Scope): Promise<Industry[]> {
   const seg = scope.persona === 'operator' ? 'operators' : 'wios'
   return transport<Industry[]>(`api/${seg}/kyb/industries`)
 }
 
 /** POST for a Moov ToS token. */
-export function getTosToken(transport: Transport): Promise<TosToken> {
+export function getOnboardingTermsToken(transport: Transport): Promise<TosToken> {
   return transport<TosToken>('api/moov/tos-token', { method: 'POST' })
 }
 
 /** Persist the selected payment-method capabilities for the scope. */
-export function savePaymentMethodCapabilities(
+export function saveOnboardingPaymentMethods(
   transport: Transport,
   scope: Scope,
   methods: PaymentMethodKey[],
-): Promise<unknown> {
-  return transport<unknown>(`${kybBase(scope)}/payment-method-capabilities`, {
+): Promise<void> {
+  return transport<void>(`${kybBase(scope)}/payment-method-capabilities`, {
     method: 'POST',
     json: { selectedPaymentMethods: methods },
   })
@@ -133,7 +140,7 @@ export function getBankAccounts(transport: Transport, scope: Scope): Promise<Ban
 }
 
 /** POST a Plaid link token for the scope's entity. */
-export function getPlaidToken(transport: Transport, scope: Scope): Promise<PlaidLinkToken> {
+export function getPlaidLinkToken(transport: Transport, scope: Scope): Promise<PlaidLinkToken> {
   return transport<PlaidLinkToken>('api/plaid/embeddable/create-token', {
     method: 'POST',
     query: { entityId: scope.entityId ?? scope.id },
@@ -142,9 +149,9 @@ export function getPlaidToken(transport: Transport, scope: Scope): Promise<Plaid
 
 /** Register a bank account — manual entry (Moov) or Plaid link.
  *  Manual returns the created BankAccount; Plaid returns per-processor results. */
-export function register(transport: Transport, scope: Scope, payload: Extract<BankRegister, { method: 'manual' }>): Promise<BankAccount>
-export function register(transport: Transport, scope: Scope, payload: Extract<BankRegister, { method: 'plaid' }>): Promise<PlaidRegisterResult>
-export function register(
+export function registerBankAccount(transport: Transport, scope: Scope, payload: Extract<BankRegister, { method: 'manual' }>): Promise<BankAccount>
+export function registerBankAccount(transport: Transport, scope: Scope, payload: Extract<BankRegister, { method: 'plaid' }>): Promise<PlaidRegisterResult>
+export function registerBankAccount(
   transport: Transport,
   scope: Scope,
   payload: BankRegister,
@@ -161,14 +168,14 @@ export function register(
 }
 
 /** POST to start micro-deposit verification for an account. */
-export function initiateVerification(transport: Transport, scope: Scope, bankAccountId: string): Promise<void> {
+export function initiateBankAccountVerification(transport: Transport, scope: Scope, bankAccountId: string): Promise<void> {
   return transport<void>(`${bankBase(scope)}/${encodeURIComponent(bankAccountId)}/initiate-verification`, {
     method: 'POST',
   })
 }
 
 /** POST the micro-deposit code (MV#### or 4 digits) to complete verification. */
-export function completeVerification(
+export function completeBankAccountVerification(
   transport: Transport,
   scope: Scope,
   bankAccountId: string,

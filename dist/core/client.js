@@ -1,34 +1,32 @@
-// Phase 1 — the client. Binds a Transport into the standalone functions and
-// exposes them as { onboarding, banking }. Consumers pass either a ready Transport
-// (e.g. mock()) or an http() config (baseUrl + auth).
+// Binds a Transport into standalone functions. Web components call the same
+// functions consumers can call directly.
 import { http } from './transport.js';
 import * as fn from './functions.js';
-import { resolveResumeStep } from './resume.js';
-export { resolveResumeStep, isSectionComplete } from './resume.js';
+export { resolveOnboardingResumeStep, isOnboardingSectionComplete } from './resume.js';
 export { mock, createMockState } from './mock.js';
 function resolveTransport(cfg) {
     return 'transport' in cfg ? cfg.transport : http(cfg);
 }
 export function createClient(cfg) {
     const t = resolveTransport(cfg);
-    const onboarding = {
+    function registerBankAccount(scope, payload) {
+        return fn.registerBankAccount(t, scope, payload);
+    }
+    return {
         getUser: (opts) => fn.getUser(t, opts),
-        getStates: (scope, step) => fn.getOnboardingStates(t, scope, step),
-        submit: (scope, submit) => fn.submitOnboarding(t, scope, submit),
-        uploadDocument: (scope, file, purpose, metadata) => fn.uploadDocument(t, scope, file, purpose, metadata),
-        getIndustries: (scope) => fn.getIndustries(t, scope),
-        getTosToken: () => fn.getTosToken(t),
-        savePaymentMethodCapabilities: (scope, methods) => fn.savePaymentMethodCapabilities(t, scope, methods),
-        resolveResumeStep,
+        getOnboardingStatus: (scope) => fn.getOnboardingStatus(t, scope),
+        getOnboardingSection: (scope, step) => fn.getOnboardingSection(t, scope, step),
+        submitOnboardingSection: (scope, submit) => fn.submitOnboardingSection(t, scope, submit),
+        uploadOnboardingDocument: (scope, file, purpose, metadata) => fn.uploadOnboardingDocument(t, scope, file, purpose, metadata),
+        getBankAccounts: (scope) => fn.getBankAccounts(t, scope),
+        getPlaidLinkToken: (scope) => fn.getPlaidLinkToken(t, scope),
+        registerBankAccount,
+        initiateBankAccountVerification: (scope, bankAccountId) => fn.initiateBankAccountVerification(t, scope, bankAccountId),
+        completeBankAccountVerification: (scope, bankAccountId, payload) => fn.completeBankAccountVerification(t, scope, bankAccountId, payload),
+        setDefaultBankAccount: (scope, bankAccountId) => fn.setDefaultBankAccount(t, scope, bankAccountId),
+        deleteBankAccount: (scope, bankAccountId) => fn.deleteBankAccount(t, scope, bankAccountId),
+        getOnboardingIndustries: (scope) => fn.getOnboardingIndustries(t, scope),
+        getOnboardingTermsToken: () => fn.getOnboardingTermsToken(t),
+        saveOnboardingPaymentMethods: (scope, methods) => fn.saveOnboardingPaymentMethods(t, scope, methods),
     };
-    const banking = {
-        list: (scope) => fn.getBankAccounts(t, scope),
-        getPlaidToken: (scope) => fn.getPlaidToken(t, scope),
-        register: (scope, payload) => fn.register(t, scope, payload),
-        initiateVerification: (scope, bankAccountId) => fn.initiateVerification(t, scope, bankAccountId),
-        completeVerification: (scope, bankAccountId, payload) => fn.completeVerification(t, scope, bankAccountId, payload),
-        setDefault: (scope, bankAccountId) => fn.setDefaultBankAccount(t, scope, bankAccountId),
-        delete: (scope, bankAccountId) => fn.deleteBankAccount(t, scope, bankAccountId),
-    };
-    return { onboarding, banking };
 }

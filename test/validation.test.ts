@@ -6,10 +6,13 @@ import {
   isPOBox,
   operatorBusinessProfileSchema,
   processingVolumeSchema,
+  validatePartialOnboardingOwner,
+  validatePartialOnboardingStep,
   validateAddressNotMatchingBusiness,
   validateForm,
   validateOwnershipTotal,
 } from '../src/validation'
+import type { PartialOnboardingValues } from '../src/validation'
 
 const validBusiness = {
   legalBusinessName: 'Bison Energy LLC',
@@ -129,5 +132,57 @@ describe('cross-field validators', () => {
       expect(isPOBox(value)).toBe(true)
     }
     expect(isPOBox('100 Main St')).toBe(false)
+  })
+})
+
+const partialOnboardingValues: PartialOnboardingValues = {
+  contact: {
+    corporationName: 'Bison Energy LLC',
+    website: 'bison.example.com',
+    phone: '(555) 123-4567',
+    address: { line1: '100 Main St', line2: '', city: 'Houston', state: 'TX', zip: '77002' },
+  },
+  incorporation: { state: 'TX', ein: { value: '12-3456789', provided: false } },
+  leadership: {
+    legalName: 'Jane Doe',
+    title: 'CEO',
+    birthDate: { value: '1980-01-15', provided: false },
+    taxId: { value: '123-45-6789', provided: false },
+    address: { line1: '200 Oak Ave', line2: '', city: 'Austin', state: 'TX', zip: '73301' },
+    ownsQuarter: false,
+  },
+  ownership: { owners: [], noOwnersAbove25: true, ownershipConfirmed: true },
+  consent: { termsAccepted: true },
+}
+
+describe('partial onboarding validation', () => {
+  test('matches contact, EIN, leadership, and sensitive-value rules', () => {
+    expect(validatePartialOnboardingStep('contact', partialOnboardingValues)).toEqual({})
+    expect(validatePartialOnboardingStep('incorporation', partialOnboardingValues)).toEqual({})
+    expect(validatePartialOnboardingStep('leadership', partialOnboardingValues)).toEqual({})
+    expect(validatePartialOnboardingStep('contact', {
+      ...partialOnboardingValues,
+      contact: { ...partialOnboardingValues.contact, phone: '5551234567', website: 'invalid', address: { ...partialOnboardingValues.contact.address, zip: '123' } },
+    })).toMatchObject({ phone: expect.any(String), website: expect.any(String), 'address.zip': expect.any(String) })
+    expect(validatePartialOnboardingStep('incorporation', {
+      ...partialOnboardingValues,
+      incorporation: { state: 'TX', ein: { value: '', provided: true } },
+    })).toEqual({})
+  })
+
+  test('requires complete 25-100% owners and ownership certification', () => {
+    const owner = {
+      legalName: 'John Smith',
+      birthDate: { value: '1985-03-20', provided: false },
+      taxId: { value: '987-65-4321', provided: false },
+      ownershipPercentage: '25',
+      address: { line1: '300 Elm St', line2: '', city: 'Dallas', state: 'TX', zip: '75201' },
+    }
+    expect(validatePartialOnboardingOwner(owner)).toEqual({})
+    expect(validatePartialOnboardingOwner({ ...owner, ownershipPercentage: '24' }).ownershipPercentage).toBeTruthy()
+    expect(validatePartialOnboardingStep('ownership', {
+      ...partialOnboardingValues,
+      ownership: { owners: [owner], noOwnersAbove25: false, ownershipConfirmed: false },
+    }).ownershipConfirmed).toBeTruthy()
   })
 })

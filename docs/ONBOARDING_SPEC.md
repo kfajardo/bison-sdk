@@ -25,7 +25,7 @@ capabilities), plus the adjacent flows that create the users/entities being onbo
 - `CONTEXT.md` in the API repo describes a Moov → Column migration where Column requires no
   KYB for WIOs/Operators. That is **aspirational for KYB** — the live onboarding endpoints below
   call Moov. `ProviderMigration:EnableStartupMigration` and `EnableLoginMigration` are `false`.
-  Direct-entry providers (Column/Increase) already **bypass** KYB on the frontend (§4.1).
+  Direct-entry providers already **bypass** KYB on the frontend (§4.1).
 - `FRONTEND_BACKEND_ANALYSIS.md` (Finix/Stripe references) is **stale** — ignore it.
 - `docs/FE_KYB_ONBOARDING_GUIDE.md` and `CAPABILITY_STATUS_FRONTEND_GUIDE.md` in the API repo
   are current and match code.
@@ -89,7 +89,7 @@ only — do not use it for new work.
   while `!sectionsDone`, where
   `sectionsDone = areRequiredKybSectionsComplete(status) && hasDocuments && hasExternalAccount`.
 - Setup-guide gating (`src/hooks/use_setup_guide_state.ts`):
-  `isOnboarded = isDirectEntry || user.isOnboarded`. **Direct-entry providers (Column/Increase)
+  `isOnboarded = isDirectEntry || user.isOnboarded`. **Direct-entry providers
   skip KYB onboarding entirely** (`:18-21`); only Moov requires it (`:22`).
 
 ### 3.2 Section/step order
@@ -648,7 +648,7 @@ All state-changing Enverus endpoints return **410 Gone** when `EnergyLink:Enable
   (`use_country_address_reset`, `AddressResetBanner`).
 - **Ownership > 100% blocked**; v2/operator flows require ≥1 controller
   (`hasAtLeastOneController`, v2 `validation.ts:681`).
-- **Document-section upload groups** (`documents_step.tsx:219-287`): Business Verification
+- **Document-section upload groups** (`documents_step.tsx:219-287`): Business documents
   (always; expects a sample JIB statement), Business Underwriting (`merchant_underwriting`,
   when required or already uploaded), Representative Verification, Account Requirement —
   required document types derived from `capabilities.currentlyDue` (`:46-80`).

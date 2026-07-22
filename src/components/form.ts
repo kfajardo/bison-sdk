@@ -98,6 +98,17 @@ export function setFieldValues(root: HTMLElement, values: Record<string, string 
   })
 }
 
+/** Parse an attribute as JSON; absent or invalid JSON yields undefined. */
+export function parseJsonAttribute<T>(host: HTMLElement, name: string): T | undefined {
+  const raw = host.getAttribute(name)
+  if (!raw) return undefined
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return undefined
+  }
+}
+
 /** Shows per-field errors and clears fields not present in the map. */
 export function showErrors(root: HTMLElement, errors: Record<string, string>): void {
   root.querySelectorAll<HTMLElement>('.bison-field').forEach((field) => {

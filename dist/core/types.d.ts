@@ -50,12 +50,16 @@ export interface OnboardingStatus {
     selectedPaymentMethods?: PaymentMethodKey[];
     controlOfficerRepresentativeId?: string;
     ownerRepresentativeIds?: string[];
+    readinessState?: string;
+    readinessMessage?: string;
+    missingInputs?: string[];
+    validationIssues?: string[];
 }
 export type PaymentMethodKey = 'cards' | 'ach' | 'wire' | 'rtp';
 export interface BusinessProfilePayload {
     legalBusinessName: string;
     doingBusinessAs?: string;
-    /** Format XX-XXXXXXX. Pass-through; never stored server-side. */
+    /** Provider Tax ID. Partial onboarding accepts nine digits; legacy flows accept XX-XXXXXXX. */
     ein?: string;
     businessType: string;
     industry?: string;
@@ -70,28 +74,34 @@ export interface BusinessProfilePayload {
     addressLine2?: string;
     city: string;
     state: string;
+    country?: string;
     zipCode: string;
     selectedPaymentMethods?: PaymentMethodKey[];
-    /** Moov ToS token (obtained via getTosToken / the ToS Drop). */
+    /** Terms token used by the onboarding terms flow. */
     tosToken?: string;
+    incorporationState?: string;
+    /** Explicit Bison payment-services consent; the server owns timestamp, terms URL, and IP evidence. */
+    termsAccepted?: boolean;
+    /** Included on initial provider-account creation. */
+    controlOfficer?: ControlOfficerPayload;
 }
 export interface ControlOfficerPayload {
     firstName: string;
     lastName: string;
-    jobTitle: string;
-    email: string;
-    phone: string;
+    jobTitle?: string;
+    email?: string;
+    phone?: string;
     /** Split date of birth per the KYB DTO. */
     birthDay?: number;
     birthMonth?: number;
     birthYear?: number;
     /** Format XXX-XX-XXXX. Pass-through; never stored server-side. */
     ssn?: string;
-    addressLine1: string;
+    addressLine1?: string;
     addressLine2?: string;
-    city: string;
-    state: string;
-    zipCode: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
 }
 export interface BeneficialOwnerPayload extends ControlOfficerPayload {
     /** Whole number 25-100. */
@@ -112,7 +122,7 @@ export interface ProcessingVolumePayload {
         p2p: number;
     };
 }
-/** Discriminated union carried by submitOnboarding(step, payload, scope). */
+/** Discriminated union carried by submitOnboardingSection(scope, submission). */
 export type OnboardingSubmit = {
     step: 'business';
     data: BusinessProfilePayload;
@@ -124,10 +134,21 @@ export type OnboardingSubmit = {
     step: 'owners';
     data: BeneficialOwnerPayload[];
     noOwnersAbove25?: boolean;
+    existingMappings?: {
+        externalRepresentativeId: string;
+        index: number;
+    }[];
 } | {
     step: 'volume';
     data: ProcessingVolumePayload;
 };
+export interface OnboardingSectionData {
+    business: BusinessProfilePayload;
+    officer: ControlOfficerPayload;
+    owners: BeneficialOwnerPayload[];
+    volume: ProcessingVolumePayload;
+    documents: KybDocumentInfo[];
+}
 export interface SaveSectionResult {
     success: boolean;
     moovAccountId?: string;
@@ -156,7 +177,8 @@ export interface Industry {
     naics?: string;
     sic?: string;
 }
-export type BankProvider = 'Column' | 'Moov' | 'Increase';
+/** Provider identifier reported by the backend; consumers should treat it as opaque. */
+export type BankProvider = string;
 export type BankAccountType = 'checking' | 'savings';
 export type HolderType = 'individual' | 'business';
 /** Micro-deposit lifecycle (BANKING_SPEC §4.4). */
@@ -198,7 +220,7 @@ export interface PlaidRegisterPayload {
     accountType?: BankAccountType;
     description?: string;
 }
-/** register(payload) is discriminated: manual entry vs Plaid link. */
+/** registerBankAccount(payload) is discriminated: manual entry vs linked account. */
 export type BankRegister = ({
     method: 'manual';
 } & ManualBankAccountPayload) | ({

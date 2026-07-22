@@ -1,7 +1,6 @@
-// Phase 3 — onboarding section definitions + the standalone <bison-onboarding-step>
-// element (the PARTIAL ONBOARDING surface). onboarding.ts reuses renderSection /
-// collectSection / the payload builders here, so the accordion and a single-section
-// embed render identical markup.
+// Phase 3 — onboarding section definitions + renderers shared by the onboarding
+// elements. onboarding.ts reuses renderSection / collectSection / the payload
+// builders here.
 import { ALL_US_REGIONS, BUSINESS_TYPES, beneficialOwnerSchema, businessProfileSchema, controlOfficerSchema, digitsOnly, processingVolumeSchema, validateAddressNotMatchingBusiness, validateForm, validateOwnershipTotal, } from '../validation/index.js';
 import { el } from './dom.js';
 import { readFields, renderFields, setFieldValues, showErrors, slotPlaceholder } from './form.js';
@@ -64,7 +63,7 @@ export const SECTIONS = {
 export function sectionSpec(step) {
     return step === 'documents' ? undefined : SECTIONS[step];
 }
-// ── Rendering (shared by onboarding.ts accordion and standalone step) ─────────
+// ── Rendering (shared by the onboarding accordion) ────────────────────────────
 /** Render a section's form body into `form`. For repeatable sections, `owners`
  *  seeds the fieldsets; onAdd/onRemove re-render. Prefill via `prefill`. */
 export function renderSection(form, spec, opts = {}) {
@@ -210,106 +209,5 @@ export function buildSubmit(step, record, owners) {
             return { step, data: buildProcessingVolume(record) };
         default:
             throw new Error(`buildSubmit: ${step} has no form payload`);
-    }
-}
-// ── Standalone section element (PARTIAL ONBOARDING surface) ────────────────────
-/**
- * <bison-onboarding-step step="business|officer|owners|volume|documents"
- *   persona scope-id entity-id? base-url>
- * Renders ONE section standalone with a `.value` getter, `.validate()` method, and
- * its own submit button. Set `.client` to reuse a client instance (tests).
- * Events: bison-before-submit (cancellable), bison-submit-success, bison-submit-error.
- */
-export class BisonOnboardingStep extends HTMLElement {
-    client;
-    owners = [{}];
-    busy = false;
-    get step() {
-        return this.getAttribute('step') ?? 'business';
-    }
-    get persona() {
-        return this.getAttribute('persona') === 'operator' ? 'operator' : 'wio';
-    }
-    get scope() {
-        const id = this.getAttribute('scope-id') ?? '';
-        const entityId = this.getAttribute('entity-id') ?? undefined;
-        return { persona: this.persona, id, entityId };
-    }
-    connectedCallback() {
-        this.render();
-    }
-    render() {
-        const spec = sectionSpec(this.step);
-        this.replaceChildren();
-        const root = el('div', { class: `bison-step bison-step--${this.step}` });
-        if (!spec) {
-            root.append(el('p', { class: 'bison-step__note', text: 'Documents are uploaded via <bison-onboarding>.' }));
-            this.append(root);
-            return;
-        }
-        const form = document.createElement('form');
-        renderSection(form, spec, {
-            owners: this.owners,
-            onAdd: spec.repeat ? () => { this.owners = collectOwners(form); this.owners.push({}); this.render(); } : undefined,
-            onRemove: spec.repeat ? (i) => { this.owners = collectOwners(form); this.owners.splice(i, 1); this.render(); } : undefined,
-        });
-        form.append(slotPlaceholder('actions'));
-        form.append(el('button', { type: 'submit', class: 'bison-onboarding__button bison-onboarding__button--next', text: 'Save' }));
-        form.addEventListener('submit', (e) => { e.preventDefault(); void this.submit(form); });
-        root.append(form);
-        this.append(root);
-    }
-    form() {
-        return this.querySelector('form');
-    }
-    get value() {
-        const form = this.form();
-        if (!form)
-            return {};
-        return sectionSpec(this.step)?.repeat ? collectOwners(form) : readFields(form);
-    }
-    /** Validates against the section schema, renders field errors, returns them ({} when valid). */
-    validate() {
-        const spec = sectionSpec(this.step);
-        const form = this.form();
-        if (!spec || !form)
-            return {};
-        if (spec.repeat) {
-            const { valid, total } = validateOwnersForm(form, spec);
-            return valid ? {} : { _owners: total ?? 'One or more owners are invalid' };
-        }
-        const errors = validateSection(spec, readFields(form));
-        showErrors(form, errors);
-        return errors;
-    }
-    async submit(form) {
-        if (this.busy)
-            return;
-        const spec = sectionSpec(this.step);
-        if (!spec)
-            return;
-        const errors = this.validate();
-        if (Object.keys(errors).length)
-            return;
-        const owners = spec.repeat ? collectOwners(form) : undefined;
-        const record = owners ? {} : readFields(form);
-        const submit = buildSubmit(this.step, record, owners);
-        if (!this.dispatchEvent(new CustomEvent('bison-before-submit', { detail: submit, bubbles: true, cancelable: true })))
-            return;
-        if (!this.client) {
-            this.dispatchEvent(new CustomEvent('bison-submit-error', { detail: new Error('No client configured'), bubbles: true }));
-            return;
-        }
-        this.busy = true;
-        try {
-            const result = await this.client.onboarding.submit(this.scope, submit);
-            this.dispatchEvent(new CustomEvent('bison-submit-success', { detail: { step: this.step, result }, bubbles: true }));
-        }
-        catch (error) {
-            this.dispatchEvent(new CustomEvent('bison-submit-error', { detail: error, bubbles: true }));
-        }
-        finally {
-            this.busy = false;
-        }
     }
 }

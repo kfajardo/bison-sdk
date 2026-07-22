@@ -12,6 +12,7 @@ export function createMockState(seed) {
         controlOfficerStatus: 'NotStarted',
         beneficialOwnersStatus: 'NotStarted',
         processingVolumeStatus: 'NotStarted',
+        partialOnboarding: false,
         selectedPaymentMethods: ['ach'],
         capabilitiesRequested: false,
         documents: [],
@@ -36,7 +37,7 @@ function buildStatus(s) {
     const isComplete = s.businessProfileStatus === 'Completed' &&
         s.controlOfficerStatus === 'Completed' &&
         s.beneficialOwnersStatus === 'Completed' &&
-        s.processingVolumeStatus === 'Completed';
+        (s.partialOnboarding || s.processingVolumeStatus === 'Completed');
     const enabled = s.capabilitiesRequested;
     return {
         entityId: 'entity_mock',
@@ -46,7 +47,7 @@ function buildStatus(s) {
         beneficialOwnersStatus: s.beneficialOwnersStatus,
         processingVolumeStatus: s.processingVolumeStatus,
         isComplete,
-        hasExternalAccount: s.banks.length > 0,
+        hasExternalAccount: Boolean(s.moovAccountId),
         bankAccountEligibility: {
             isSupported: s.businessProfileStatus === 'Completed' || s.hasUsAddress,
             supportedCountryCodes: ['US'],
@@ -59,6 +60,11 @@ function buildStatus(s) {
         selectedPaymentMethods: s.selectedPaymentMethods,
         controlOfficerRepresentativeId: s.controlOfficerRepresentativeId,
         ownerRepresentativeIds: s.ownerRepresentativeIds,
+        readinessState: isComplete && enabled
+            ? 'Ready'
+            : s.businessProfileStatus === 'NotStarted'
+                ? 'MissingProfile'
+                : 'MissingProviderInput',
     };
 }
 /** Bank-account eligibility guard (§8.1). Eligible once the business profile is
@@ -156,11 +162,15 @@ function handleKyb(s, section, method, req) {
             s.moovAccountId = `moov_${++s.seq}`; // First POST creates the Moov account (§6.1).
         if (data.selectedPaymentMethods?.length)
             s.selectedPaymentMethods = data.selectedPaymentMethods;
+        if (data.termsAccepted)
+            s.partialOnboarding = true;
         if (data.ein)
             s.taxIdProvided = true;
         // Store a redacted copy (EIN stripped, never persisted).
-        const { ein: _ein, ...rest } = data;
+        const { ein: _ein, controlOfficer, ...rest } = data;
         s.business = rest;
+        if (controlOfficer)
+            saveOfficer(s, controlOfficer);
         s.businessProfileStatus = 'Completed'; // NotStarted -> Completed directly (§6.8).
         const result = { success: true, moovAccountId: s.moovAccountId };
         return result;
@@ -171,15 +181,7 @@ function handleKyb(s, section, method, req) {
                 return null;
             return { ...s.officer, birthDateProvided: s.birthDateProvided, governmentIdProvided: s.governmentIdProvided };
         }
-        const data = json;
-        if (data.birthYear || data.birthMonth || data.birthDay)
-            s.birthDateProvided = true;
-        if (data.ssn)
-            s.governmentIdProvided = true;
-        const { ssn: _ssn, ...rest } = data;
-        s.officer = rest;
-        s.controlOfficerRepresentativeId = s.controlOfficerRepresentativeId ?? `rep_${++s.seq}`;
-        s.controlOfficerStatus = 'Completed';
+        saveOfficer(s, json);
         const result = { success: true, representativeId: s.controlOfficerRepresentativeId };
         return result;
     }
@@ -228,6 +230,16 @@ function handleKyb(s, section, method, req) {
         return { selectedPaymentMethods: s.selectedPaymentMethods };
     }
     throw new BisonApiError(404, `mock: unknown kyb section ${section}`);
+}
+function saveOfficer(s, data) {
+    if (data.birthYear || data.birthMonth || data.birthDay)
+        s.birthDateProvided = true;
+    if (data.ssn)
+        s.governmentIdProvided = true;
+    const { ssn: _ssn, ...rest } = data;
+    s.officer = rest;
+    s.controlOfficerRepresentativeId = s.controlOfficerRepresentativeId ?? `rep_${++s.seq}`;
+    s.controlOfficerStatus = 'Completed';
 }
 // ── Banking handler ──────────────────────────────────────────────────────────────
 function addBank(s, init) {

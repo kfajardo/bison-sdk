@@ -1,22 +1,21 @@
-// Phase 1 — the client. Binds a Transport into the standalone functions and
-// exposes them as { onboarding, banking }. Consumers pass either a ready Transport
-// (e.g. mock()) or an http() config (baseUrl + auth).
+// Binds a Transport into standalone functions. Web components call the same
+// functions consumers can call directly.
 
 import { http } from './transport.js'
 import type { AuthProvider, Transport } from './transport.js'
 import type { Scope } from './scope.js'
 import type {
+  BankAccount,
   BankRegister,
   CompleteVerificationPayload,
   MoovFilePurpose,
   OnboardingStep,
   OnboardingSubmit,
   PaymentMethodKey,
+  PlaidRegisterResult,
 } from './types.js'
 import * as fn from './functions.js'
-import { resolveResumeStep } from './resume.js'
-
-export { resolveResumeStep, isSectionComplete } from './resume.js'
+export { resolveOnboardingResumeStep, isOnboardingSectionComplete } from './resume.js'
 export { mock, createMockState, type MockState } from './mock.js'
 
 export type ClientConfig =
@@ -29,32 +28,32 @@ function resolveTransport(cfg: ClientConfig): Transport {
 
 export function createClient(cfg: ClientConfig) {
   const t = resolveTransport(cfg)
+  function registerBankAccount(scope: Scope, payload: Extract<BankRegister, { method: 'manual' }>): Promise<BankAccount>
+  function registerBankAccount(scope: Scope, payload: Extract<BankRegister, { method: 'plaid' }>): Promise<PlaidRegisterResult>
+  function registerBankAccount(scope: Scope, payload: BankRegister): Promise<BankAccount | PlaidRegisterResult> {
+    return fn.registerBankAccount(t, scope, payload as never)
+  }
 
-  const onboarding = {
+  return {
     getUser: (opts?: { email?: string }) => fn.getUser(t, opts),
-    getStates: (scope: Scope, step?: OnboardingStep) => fn.getOnboardingStates(t, scope, step as OnboardingStep),
-    submit: (scope: Scope, submit: OnboardingSubmit) => fn.submitOnboarding(t, scope, submit),
-    uploadDocument: (scope: Scope, file: File, purpose?: MoovFilePurpose, metadata?: string) =>
-      fn.uploadDocument(t, scope, file, purpose, metadata),
-    getIndustries: (scope: Scope) => fn.getIndustries(t, scope),
-    getTosToken: () => fn.getTosToken(t),
-    savePaymentMethodCapabilities: (scope: Scope, methods: PaymentMethodKey[]) =>
-      fn.savePaymentMethodCapabilities(t, scope, methods),
-    resolveResumeStep,
+    getOnboardingStatus: (scope: Scope) => fn.getOnboardingStatus(t, scope),
+    getOnboardingSection: <Step extends OnboardingStep>(scope: Scope, step: Step) => fn.getOnboardingSection(t, scope, step),
+    submitOnboardingSection: (scope: Scope, submit: OnboardingSubmit) => fn.submitOnboardingSection(t, scope, submit),
+    uploadOnboardingDocument: (scope: Scope, file: File, purpose?: MoovFilePurpose, metadata?: string) =>
+      fn.uploadOnboardingDocument(t, scope, file, purpose, metadata),
+    getBankAccounts: (scope: Scope) => fn.getBankAccounts(t, scope),
+    getPlaidLinkToken: (scope: Scope) => fn.getPlaidLinkToken(t, scope),
+    registerBankAccount,
+    initiateBankAccountVerification: (scope: Scope, bankAccountId: string) => fn.initiateBankAccountVerification(t, scope, bankAccountId),
+    completeBankAccountVerification: (scope: Scope, bankAccountId: string, payload: CompleteVerificationPayload) =>
+      fn.completeBankAccountVerification(t, scope, bankAccountId, payload),
+    setDefaultBankAccount: (scope: Scope, bankAccountId: string) => fn.setDefaultBankAccount(t, scope, bankAccountId),
+    deleteBankAccount: (scope: Scope, bankAccountId: string) => fn.deleteBankAccount(t, scope, bankAccountId),
+    getOnboardingIndustries: (scope: Scope) => fn.getOnboardingIndustries(t, scope),
+    getOnboardingTermsToken: () => fn.getOnboardingTermsToken(t),
+    saveOnboardingPaymentMethods: (scope: Scope, methods: PaymentMethodKey[]) =>
+      fn.saveOnboardingPaymentMethods(t, scope, methods),
   }
-
-  const banking = {
-    list: (scope: Scope) => fn.getBankAccounts(t, scope),
-    getPlaidToken: (scope: Scope) => fn.getPlaidToken(t, scope),
-    register: (scope: Scope, payload: BankRegister) => fn.register(t, scope, payload as never),
-    initiateVerification: (scope: Scope, bankAccountId: string) => fn.initiateVerification(t, scope, bankAccountId),
-    completeVerification: (scope: Scope, bankAccountId: string, payload: CompleteVerificationPayload) =>
-      fn.completeVerification(t, scope, bankAccountId, payload),
-    setDefault: (scope: Scope, bankAccountId: string) => fn.setDefaultBankAccount(t, scope, bankAccountId),
-    delete: (scope: Scope, bankAccountId: string) => fn.deleteBankAccount(t, scope, bankAccountId),
-  }
-
-  return { onboarding, banking }
 }
 
 export type BisonClient = ReturnType<typeof createClient>

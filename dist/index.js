@@ -1,4 +1,4 @@
-export { createClient, mock, createMockState, resolveResumeStep, isSectionComplete, } from './core/client.js';
+export { createClient, mock, createMockState, resolveOnboardingResumeStep, isOnboardingSectionComplete, } from './core/client.js';
 export { BisonApiError, http } from './core/transport.js';
 export * from './core/scope.js';
 export * from './core/types.js';

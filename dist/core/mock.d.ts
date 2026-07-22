@@ -11,6 +11,8 @@ export interface MockState {
     controlOfficerStatus: SectionStatus;
     beneficialOwnersStatus: SectionStatus;
     processingVolumeStatus: SectionStatus;
+    /** Partial onboarding does not require the legacy volume step. */
+    partialOnboarding: boolean;
     selectedPaymentMethods: PaymentMethodKey[];
     /** Capabilities start pending, flip enabled after beneficial-owners POST (§6.3). */
     capabilitiesRequested: boolean;

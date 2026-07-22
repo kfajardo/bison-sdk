@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { BUSINESS_TYPES, US_STATES, US_TERRITORIES } from './constants.js'
 
 export * from './constants.js'
+export * from './partial-onboarding.js'
 
 // Ported from bison-jib-web-flow src/operator/components/verification/validation.ts
 // and src/utils/validation/payment_provider.ts. Keep rules in sync with the platform app.

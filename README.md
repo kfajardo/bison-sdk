@@ -54,40 +54,39 @@ Onboarding is five sections in canonical order — `business`, `officer`, `owner
 `volume`, `documents`. Read status, then submit sections one at a time:
 
 ```ts
-// Full KYB status, or one section's saved data
-const status = await bison.getOnboardingStates(scope)          // OnboardingStatus
-const business = await bison.getOnboardingStates(scope, 'business')
+const status = await bison.getOnboardingStatus(scope)
+const business = await bison.getOnboardingSection(scope, 'business')
 
 // Where should a returning user resume? (pure, from status alone)
-import { resolveResumeStep } from 'bison-jib-sdk'
-const step = resolveResumeStep(status)   // 'business' | 'officer' | 'owners' | 'volume' | 'documents'
+import { resolveOnboardingResumeStep } from 'bison-jib-sdk'
+const step = resolveOnboardingResumeStep(status)
 
 // Submit a section — discriminated by `step`
-await bison.submitOnboarding(scope, { step: 'business', data: businessProfile })
-await bison.submitOnboarding(scope, { step: 'officer', data: officer })
-await bison.submitOnboarding(scope, { step: 'owners', data: owners, noOwnersAbove25: false })
-await bison.submitOnboarding(scope, { step: 'volume', data: volume })
+await bison.submitOnboardingSection(scope, { step: 'business', data: businessProfile })
+await bison.submitOnboardingSection(scope, { step: 'officer', data: officer })
+await bison.submitOnboardingSection(scope, { step: 'owners', data: owners, noOwnersAbove25: false })
+await bison.submitOnboardingSection(scope, { step: 'volume', data: volume })
 
 // Documents (multipart) + Moov helpers
-await bison.uploadDocument(scope, file, 'merchant_underwriting')
-await bison.getIndustries(scope)
-await bison.getTosToken()
-await bison.savePaymentMethodCapabilities(scope, ['cards', 'ach'])
+await bison.uploadOnboardingDocument(scope, file, 'merchant_underwriting')
+await bison.getOnboardingIndustries(scope)
+await bison.getOnboardingTermsToken()
+await bison.saveOnboardingPaymentMethods(scope, ['cards', 'ach'])
 ```
 
-`submitOnboarding` with `step: 'business'` creates the Moov account on first save and
+`submitOnboardingSection` with `step: 'business'` creates the provider account on first save and
 returns `moovAccountId` on the result.
 
 ### Banking
 
 ```ts
 await bison.getBankAccounts(scope)                                  // BankAccount[]
-await bison.register(scope, { method: 'manual', holderName: 'Acme LLC',
+await bison.registerBankAccount(scope, { method: 'manual', holderName: 'Acme LLC',
   routingNumber: '021000021', accountNumber: '1234567890' })       // -> BankAccount
-await bison.getPlaidToken(scope)                                    // { linkToken }
-await bison.register(scope, { method: 'plaid', publicToken, accountId }) // -> PlaidRegisterResult
-await bison.initiateVerification(scope, bankAccountId)
-await bison.completeVerification(scope, bankAccountId, { code: 'MV1234' })
+await bison.getPlaidLinkToken(scope)                                // { linkToken }
+await bison.registerBankAccount(scope, { method: 'plaid', publicToken, accountId })
+await bison.initiateBankAccountVerification(scope, bankAccountId)
+await bison.completeBankAccountVerification(scope, bankAccountId, { code: 'MV1234' })
 await bison.setDefaultBankAccount(scope, bankAccountId)
 await bison.deleteBankAccount(scope, bankAccountId)
 ```
@@ -137,21 +136,30 @@ regular DOM, so plain CSS reaches all depths.
 
   const client = createClient({ baseUrl: 'https://api.yourhost.com', auth: { getToken } })
   document.querySelector('bison-onboarding').client = client
-  document.querySelector('bison-bank-crud').client = client
+  document.querySelector('bison-bank-accounts').client = client
 </script>
 
 <bison-onboarding persona="wio" scope-id="wio_123"></bison-onboarding>
-<bison-bank-crud persona="wio" scope-id="wio_123"></bison-bank-crud>
+<bison-bank-accounts persona="wio" scope-id="wio_123"></bison-bank-accounts>
 ```
 
-- `<bison-onboarding>` — the full multi-step flow (`persona`, `scope-id`, `entity-id?`).
-- `<bison-onboarding-step step="business" persona="wio">` — one step standalone, with
-  a `value` getter and a `validate()` method for custom flows.
-- `<bison-bank-crud>` — bank-account list / add / verify / set-default / delete.
+- `<bison-onboarding>` — the full multi-step flow (`persona`, `scope-id`, `entity-id?`,
+  optional `prefill` JSON attribute or `.prefill` property keyed by section,
+  optional `labels` JSON attribute or `.labels` property to relabel section titles
+  and accessible state descriptions).
+- `<bison-onboarding-partial>` — an unstyled partial onboarding form
+  covering contact, incorporation, leadership, beneficial ownership, and payment
+  services consent. New entities submit business + embedded control officer, then
+  owners; existing provider entities update the officer between those requests.
+  Its built-in Banking section lets the WIO submit one manual destination account
+  for the operator’s use; it never lists existing accounts. Set `terms-url` to a
+  Bison-hosted disclosure URL. `bison-partial-complete` fires after onboarding succeeds.
+- `<bison-bank-accounts>` — bank-account list / add / verify / set-default / delete.
 
 Events (all bubble, payload in `detail`):
 `bison-step-change`, `bison-status-checked`, `bison-already-onboarded`,
 `bison-already-registered`, `bison-submit-success`, `bison-submit-error`,
+`bison-partial-complete`,
 `bison-bank-added`, `bison-bank-deleted`, `bison-bank-default-changed`,
 `bison-bank-verified`.
 
@@ -160,7 +168,7 @@ Events (all bubble, payload in `detail`):
 The components expose a **semver-governed styling contract** in four layers:
 
 1. **Classes** — BEM-ish `bison-*` hooks on every node (`bison-onboarding__form`,
-   `bison-field__input`, `bison-bank-crud__row`, …).
+   `bison-field__input`, `bison-bank-accounts__row`, …).
 2. **State attributes** — `data-state="active|done|locked|error"`,
    `data-step`, `data-provider`, and `data-verified` / `data-default` on bank rows.
 3. **Slots** — project your own markup via `slot="header"`,

@@ -2,13 +2,13 @@
 //
 // Gating (ONBOARDING_SPEC §3.3): business first; every other section is LOCKED
 // until businessProfileStatus === 'Completed'. Auto-open resolves via
-// resolveResumeStep(status). A section whose capabilities carry `errors` shows
+// resolveOnboardingResumeStep(status). A section whose capabilities carry `errors` shows
 // action_required. Redacted-field resume (§5.2): when the GET reports
 // taxIdProvided / birthDateProvided / governmentIdProvided we don't force re-entry.
 //
 // Per-section submit only (no auto-orchestration): each section POSTs its own step.
 // Documents + banking become available once business is Completed and eligible;
-// banking embeds <bison-bank-crud> for the same scope (composition).
+// banking embeds <bison-bank-accounts> for the same scope (composition).
 
 import type {
   OnboardingStatus,
@@ -18,10 +18,10 @@ import type {
 } from '../core/types.js'
 import type { Persona, Scope } from '../core/scope.js'
 import { ONBOARDING_STEPS } from '../core/types.js'
-import { resolveResumeStep } from '../core/resume.js'
+import { resolveOnboardingResumeStep } from '../core/resume.js'
 import { createClient, type BisonClient } from '../core/client.js'
 import { el, emit, setState } from './dom.js'
-import { readFields, showErrors, slotPlaceholder } from './form.js'
+import { parseJsonAttribute, readFields, showErrors, slotPlaceholder } from './form.js'
 import {
   buildSubmit,
   collectOwners,
@@ -46,7 +46,18 @@ const SECTION_TITLE: Record<OnboardingStep, string> = {
   documents: 'Documents & banking',
 }
 
-type SectionUiState = 'locked' | 'active' | 'done' | 'error'
+export type SectionUiState = 'locked' | 'active' | 'done' | 'error'
+
+const STATE_LABEL: Record<SectionUiState, string> = {
+  locked: 'Unavailable',
+  active: 'In progress',
+  done: 'Complete',
+  error: 'Needs attention',
+}
+
+/** Text overrides (copy / i18n), merged over defaults. State keys customize the
+ *  accessible state description; step keys relabel section titles. */
+export type OnboardingLabels = Partial<Record<SectionUiState | OnboardingStep, string>>
 
 function statusFor(status: OnboardingStatus, step: OnboardingStep): SectionStatus | undefined {
   switch (step) {
@@ -74,11 +85,24 @@ function bankingEligible(status: OnboardingStatus): boolean {
   return status.bankAccountEligibility?.isSupported !== false
 }
 
+/** Consumer-supplied initial field values, keyed by section then field name.
+ *  Field names match the section's form fields (steps.ts SECTIONS). */
+export interface OnboardingPrefill {
+  business?: Record<string, string>
+  officer?: Record<string, string>
+  owners?: Record<string, string>[]
+  volume?: Record<string, string>
+}
+
 /**
- * <bison-onboarding persona scope-id entity-id? base-url>
+ * <bison-onboarding persona scope-id entity-id? base-url prefill? labels?>
  * Set `.client` to inject a client/transport (tests). Renders the 5-section accordion.
- * Events (bubbling): bison-step-change, bison-status-checked, bison-submit-success,
- * bison-submit-error, and cancellable bison-before-submit.
+ * Prefill: set `.prefill` (OnboardingPrefill) or the `prefill` attribute (same shape,
+ * JSON). Redacted-resume placeholders (§5.2) win over prefill for fields the server
+ * already holds. Labels: `.labels` / `labels` attribute (OnboardingLabels JSON)
+ * overrides accessible state descriptions and section titles. Events (bubbling): bison-step-change,
+ * bison-status-checked, bison-submit-success, bison-submit-error, and cancellable
+ * bison-before-submit.
  */
 export class BisonOnboarding extends HTMLElement {
   client?: BisonSectionClient
@@ -88,6 +112,27 @@ export class BisonOnboarding extends HTMLElement {
   private owners: Record<string, string>[] = [{}]
   private busy = false
   private error?: string
+  private _prefill?: OnboardingPrefill
+  private _labels: OnboardingLabels = {}
+
+  get prefill(): OnboardingPrefill | undefined {
+    return this._prefill
+  }
+
+  set prefill(value: OnboardingPrefill | undefined) {
+    this._prefill = value
+    if (value?.owners?.length) this.owners = value.owners.map((o) => ({ ...o }))
+    if (this.isConnected) this.render()
+  }
+
+  get labels(): OnboardingLabels {
+    return this._labels
+  }
+
+  set labels(value: OnboardingLabels | undefined) {
+    this._labels = value ?? {}
+    if (this.isConnected) this.render()
+  }
 
   get persona(): Persona {
     return this.getAttribute('persona') === 'operator' ? 'operator' : 'wio'
@@ -98,6 +143,14 @@ export class BisonOnboarding extends HTMLElement {
   }
 
   connectedCallback(): void {
+    if (!this._prefill) {
+      const attr = parseJsonAttribute<OnboardingPrefill>(this, 'prefill')
+      if (attr) this.prefill = attr
+    }
+    if (!Object.keys(this._labels).length) {
+      const attr = parseJsonAttribute<OnboardingLabels>(this, 'labels')
+      if (attr) this._labels = attr
+    }
     this.render()
     void this.refresh()
   }
@@ -113,9 +166,9 @@ export class BisonOnboarding extends HTMLElement {
   /** GET status, set the resume/auto-open target, re-render. */
   async refresh(): Promise<void> {
     try {
-      this.status = (await this.resolveClient().onboarding.getStates(this.scope)) as OnboardingStatus
+      this.status = await this.resolveClient().getOnboardingStatus(this.scope)
       emit(this, 'bison-status-checked', this.status)
-      this.openStep = resolveResumeStep(this.status)
+      this.openStep = resolveOnboardingResumeStep(this.status)
       this.error = undefined
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Failed to load onboarding status.'
@@ -153,6 +206,7 @@ export class BisonOnboarding extends HTMLElement {
 
   private renderSectionCard(step: OnboardingStep): HTMLElement {
     const uiState = this.uiState(step)
+    const title = this._labels[step] ?? SECTION_TITLE[step]
     const card = el('section', { class: `bison-onboarding__section bison-onboarding__section--${step}` })
     setState(card, 'state', uiState)
     setState(card, 'step', step)
@@ -162,6 +216,7 @@ export class BisonOnboarding extends HTMLElement {
       type: 'button',
       class: 'bison-onboarding__section-header',
       'aria-expanded': isOpen ? 'true' : 'false',
+      'aria-label': `${title}: ${this._labels[uiState] ?? STATE_LABEL[uiState]}`,
       disabled: uiState === 'locked',
       onClick: () => {
         if (uiState === 'locked') return
@@ -169,10 +224,7 @@ export class BisonOnboarding extends HTMLElement {
         this.render()
         emit(this, 'bison-step-change', { step })
       },
-    }, [
-      el('span', { class: 'bison-onboarding__section-title', text: SECTION_TITLE[step] }),
-      el('span', { class: 'bison-onboarding__section-badge', text: uiState }),
-    ])
+    }, [el('span', { class: 'bison-onboarding__section-title', text: title })])
     card.append(header)
 
     if (isOpen) {
@@ -188,7 +240,9 @@ export class BisonOnboarding extends HTMLElement {
     const spec = sectionSpec(step)
     if (!spec) return
     const form = document.createElement('form')
-    const prefill = this.redactedPrefill(step)
+    // Consumer prefill first, redacted placeholders override (server truth wins).
+    const merged = { ...this.consumerPrefill(step), ...this.redactedPrefill(step) }
+    const prefill = Object.keys(merged).length ? merged : undefined
     renderSection(form, spec, {
       owners: this.owners,
       prefill,
@@ -201,6 +255,11 @@ export class BisonOnboarding extends HTMLElement {
     form.append(submitBtn)
     form.addEventListener('submit', (e) => { e.preventDefault(); void this.submitSection(step, form, submitBtn) })
     body.append(form)
+  }
+
+  /** Consumer prefill for a single-record section (owners seed `this.owners` instead). */
+  private consumerPrefill(step: OnboardingStep): Record<string, string> | undefined {
+    return step === 'owners' || step === 'documents' ? undefined : this._prefill?.[step]
   }
 
   /** §5.2 redacted resume: if Moov already holds EIN/DOB/SSN, seed placeholders so the
@@ -251,7 +310,7 @@ export class BisonOnboarding extends HTMLElement {
     this.busy = true
     button.disabled = true
     try {
-      const result = await this.resolveClient().onboarding.submit(this.scope, submit)
+      const result = await this.resolveClient().submitOnboardingSection(this.scope, submit)
       emit(this, 'bison-submit-success', { step, result })
       await this.refresh()
     } catch (error) {
@@ -295,7 +354,7 @@ export class BisonOnboarding extends HTMLElement {
 
     // Banking becomes available after business profile + eligibility (composition).
     if (businessDone && bankingEligible(this.status!)) {
-      const bank = document.createElement('bison-bank-crud')
+      const bank = document.createElement('bison-bank-accounts')
       bank.setAttribute('persona', this.persona)
       bank.setAttribute('scope-id', this.getAttribute('scope-id') ?? '')
       if (this.getAttribute('entity-id')) bank.setAttribute('entity-id', this.getAttribute('entity-id')!)
@@ -316,7 +375,7 @@ export class BisonOnboarding extends HTMLElement {
     if (this.busy) return
     this.busy = true
     try {
-      const result = await this.resolveClient().onboarding.uploadDocument(this.scope, file)
+      const result = await this.resolveClient().uploadOnboardingDocument(this.scope, file)
       emit(this, 'bison-submit-success', { step: 'documents', result })
       await this.refresh()
     } catch (error) {

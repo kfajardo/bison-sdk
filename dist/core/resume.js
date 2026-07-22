@@ -27,7 +27,7 @@ function sectionStatus(status, step) {
     }
 }
 /** True when the given section counts as finished for resume purposes. */
-export function isSectionComplete(status, step) {
+export function isOnboardingSectionComplete(status, step) {
     return done(sectionStatus(status, step));
 }
 /** Map a Moov capability requirement key to the onboarding section that owns it.
@@ -53,9 +53,9 @@ function requirementToStep(requirement) {
  *    that is not Completed.
  * 4. If everything is complete, stay on documents (the last section).
  */
-export function resolveResumeStep(status) {
+export function resolveOnboardingResumeStep(status) {
     // 1. Business gates everything else.
-    if (!isSectionComplete(status, 'business'))
+    if (!isOnboardingSectionComplete(status, 'business'))
         return 'business';
     // 2. Capability errors -> action_required section wins. Walk sections in order
     //    so the earliest action-required section is picked.
@@ -71,7 +71,7 @@ export function resolveResumeStep(status) {
             return target;
     }
     // 3. First not-Completed section in canonical order.
-    const next = ONBOARDING_STEPS.find((step) => !isSectionComplete(status, step));
+    const next = ONBOARDING_STEPS.find((step) => !isOnboardingSectionComplete(status, step));
     if (next)
         return next;
     // 4. All complete.

@@ -12,7 +12,8 @@ data-attributes, slot names, token names, and events below are the public API.
 |---|---|---|
 | `<bison-onboarding>` | Full multi-step KYB onboarding flow | `persona`, `scope-id`, `entity-id?`, `base-url?` |
 | `<bison-onboarding-step step="…">` | One onboarding step, standalone | `step`, `persona` |
-| `<bison-bank-crud>` | Bank-account list / add / verify / default / delete | `persona`, `scope-id`, `entity-id?`, `base-url?` |
+| `<bison-onboarding-partial>` | Partial onboarding with one manual destination-account submission | `persona`, `scope-id`, `entity-id?`, `base-url?`, `terms-url?` |
+| `<bison-bank-accounts>` | Bank-account list / add / verify / default / delete | `persona`, `scope-id`, `entity-id?`, `base-url?` |
 
 `persona` is `"wio" | "operator"`. `scope-id` is the WIO or Operator id; add
 `entity-id` for the WIO sub-entity route family. `base-url` is only needed when a
@@ -74,33 +75,40 @@ Root modifier: `bison-onboarding--done` (set on the root in the completed state)
 Field validity is exposed **both** as the `bison-field--invalid` class and as
 `aria-invalid="true"` on the input — style off either.
 
+**`bison-partial`** (partial onboarding)
+
+`bison-partial__form`, `bison-partial__section--contact`, `--incorporation`,
+`--leadership`, `--ownership`, `--consent`, and `--banking` expose the stacked
+flow. Banking uses the `bison-bank-accounts__form` hooks below, submits one manual
+destination account, and never fetches or displays an account list.
+
 **`bison-step`** (the standalone `<bison-onboarding-step>` wrapper): `bison-step`,
 `bison-step--<stepId>`. Fields inside reuse the `bison-field` block.
 
-**`bison-bank-crud`** (banking)
+**`bison-bank-accounts`** (banking)
 
 | Class | Element |
 |---|---|
-| `bison-bank-crud` | root wrapper |
-| `bison-bank-crud__list` | the accounts list (`<ul>`) |
-| `bison-bank-crud__row` | one account row — status via `data-verified` / `data-default` (Layer 2) |
-| `bison-bank-crud__row-main` | the row's name/number stack |
-| `bison-bank-crud__bank-name` | bank name text |
-| `bison-bank-crud__account-number` | masked account number (last-4) |
-| `bison-bank-crud__badges` | badge container |
-| `bison-bank-crud__badge` | one badge; modifiers `--verified` / `--unverified` / `--default` |
-| `bison-bank-crud__row-actions` | per-row action buttons |
-| `bison-bank-crud__empty-state` | shown when there are no accounts (Layer 3 slot target) |
-| `bison-bank-crud__form` | the add-account form |
-| `bison-bank-crud__input` | an input inside the bank form |
-| `bison-bank-crud__error` | form-level error |
-| `bison-bank-crud__actions` | the add-form button row |
-| `bison-bank-crud__button` | any button; modifiers `--cancel` / `--ghost` |
-| `bison-bank-crud__dialog` | the micro-deposit verify dialog (`<dialog>`) |
-| `bison-bank-crud__dialog-body` | dialog content |
-| `bison-bank-crud__dialog-title` | dialog heading |
-| `bison-bank-crud__dialog-intro` | dialog explanatory text |
-| `bison-bank-crud__code-input` | the `MV####` verification-code input |
+| `bison-bank-accounts` | root wrapper |
+| `bison-bank-accounts__list` | the accounts list (`<ul>`) |
+| `bison-bank-accounts__row` | one account row — status via `data-verified` / `data-default` (Layer 2) |
+| `bison-bank-accounts__row-main` | the row's name/number stack |
+| `bison-bank-accounts__bank-name` | bank name text |
+| `bison-bank-accounts__account-number` | masked account number (last-4) |
+| `bison-bank-accounts__badges` | badge container |
+| `bison-bank-accounts__badge` | one badge; modifiers `--verified` / `--unverified` / `--default` |
+| `bison-bank-accounts__row-actions` | per-row action buttons |
+| `bison-bank-accounts__empty-state` | shown when there are no accounts (Layer 3 slot target) |
+| `bison-bank-accounts__form` | the add-account form |
+| `bison-bank-accounts__input` | an input inside the bank form |
+| `bison-bank-accounts__error` | form-level error |
+| `bison-bank-accounts__actions` | the add-form button row |
+| `bison-bank-accounts__button` | any button; modifiers `--cancel` / `--ghost` |
+| `bison-bank-accounts__dialog` | the micro-deposit verify dialog (`<dialog>`) |
+| `bison-bank-accounts__dialog-body` | dialog content |
+| `bison-bank-accounts__dialog-title` | dialog heading |
+| `bison-bank-accounts__dialog-intro` | dialog explanatory text |
+| `bison-bank-accounts__code-input` | the `MV####` verification-code input |
 
 ---
 
@@ -117,17 +125,17 @@ adding a value is **minor**.
 |---|---|---|---|
 | `data-state` | `bison-onboarding__step-item` | `locked` \| `active` \| `done` \| `error` | step progress / lock state |
 | `data-step` | `bison-onboarding__step-item`, `bison-onboarding__form` | `business` \| `officer` \| `owners` \| `volume` \| `documents` | which onboarding step this node is |
-| `data-provider` | `bison-bank-crud` | `moov` \| `column` | active banking provider (brand/behavior hook) |
-| `data-verified` | `bison-bank-crud__row` | present / absent (boolean) | account passed micro-deposit verification |
-| `data-default` | `bison-bank-crud__row` | present / absent (boolean) | account is the entity's default |
+| `data-provider` | `bison-bank-accounts` | `moov` \| `column` | active banking provider (brand/behavior hook) |
+| `data-verified` | `bison-bank-accounts__row` | present / absent (boolean) | account passed micro-deposit verification |
+| `data-default` | `bison-bank-accounts__row` | present / absent (boolean) | account is the entity's default |
 
 Example:
 
 ```css
 .bison-onboarding__step-item[data-state="error"] { color: var(--bison-error); }
 .bison-onboarding__step-item[data-state="locked"] { opacity: 0.6; }
-.bison-bank-crud__row[data-default] { border-color: var(--bison-accent); }
-.bison-bank-crud__row:not([data-verified]) .bison-bank-crud__badge--verified { display: none; }
+.bison-bank-accounts__row[data-default] { border-color: var(--bison-accent); }
+.bison-bank-accounts__row:not([data-verified]) .bison-bank-accounts__badge--verified { display: none; }
 ```
 
 ---
@@ -148,7 +156,7 @@ content is **yours** — the SDK ships no CSS for it.
 | `section-intro:<step>` | above the fields of that step's form (`<step>` is `business`\|`officer`\|`owners`\|`volume`\|`documents`) | per-step explanatory copy, e.g. `section-intro:business` |
 | `actions` | in place of the default button row | fully custom navigation controls |
 | `done` | in place of the default completion panel | your own success screen |
-| `empty-state` | inside `<bison-bank-crud>` when there are no accounts | custom "no accounts yet" content |
+| `empty-state` | inside `<bison-bank-accounts>` when there are no accounts | custom "no accounts yet" content |
 
 ```html
 <bison-onboarding persona="wio" scope-id="wio_1">
@@ -156,9 +164,9 @@ content is **yours** — the SDK ships no CSS for it.
   <p slot="section-intro:business">Match your EIN filing exactly.</p>
 </bison-onboarding>
 
-<bison-bank-crud persona="wio" scope-id="wio_1">
+<bison-bank-accounts persona="wio" scope-id="wio_1">
   <div slot="empty-state">No accounts yet — add one to get paid.</div>
-</bison-bank-crud>
+</bison-bank-accounts>
 ```
 
 ---
@@ -248,11 +256,15 @@ adding an event or an optional `detail` field is **minor**.
 | `bison-submit-success` | `SaveSectionResult` (final registration result) | the flow completes successfully |
 | `bison-submit-error` | `BisonApiError \| Error` | any step submission fails |
 
-### `<bison-bank-crud>`
+### Bank accounts
+
+`bison-bank-added` and `bison-bank-error` also bubble from the Banking submission
+built into `<bison-onboarding-partial>`. List-management events belong only to
+`<bison-bank-accounts>`.
 
 | Event | `detail` | Fires when |
 |---|---|---|
-| `bison-bank-added` | `BankAccount` | an account is added (manual or Plaid) |
+| `bison-bank-added` | `{ method, account \| result }` | an account is added (manual or Plaid) |
 | `bison-bank-deleted` | `{ id: string }` | an account is deleted |
 | `bison-bank-default-changed` | `{ id: string }` | the default account changes |
 | `bison-bank-verified` | `{ id: string }` | micro-deposit verification completes |
