@@ -20,22 +20,14 @@ export interface RequestOptions {
  * already unwrapped) or throw BisonApiError. http() and mock() both implement this.
  */
 export type Transport = <T>(path: string, opts?: RequestOptions) => Promise<T>;
-/**
- * Token provider. The SDK never holds a raw API key — the consumer's server mints
- * a short-lived, scope-bound token (from an API key exchange, or an Auth0 token —
- * the SDK is neutral) and this callback returns it. Called per request; cache in
- * the callback if you want.
- */
-export interface AuthProvider {
-    getToken: () => string | Promise<string>;
-}
+export declare const BISON_API_URL = "https://bison-backend-prod-cbdfeveaa2a6cngk.southeastasia-01.azurewebsites.net";
 export interface HttpTransportConfig {
-    /** API origin, e.g. https://api.example.com */
-    baseUrl: string;
-    /** Bearer token provider. Omit only against endpoints that need no auth. */
-    auth?: AuthProvider;
+    /** Publishable embeddable API key sent as X-Embeddable-Key. */
+    apiKey: string;
+    /** Advanced override for local/staging tests. Production is the default. */
+    baseUrl?: string;
     /** Override fetch (tests, custom agents). Defaults to globalThis.fetch. */
     fetch?: typeof globalThis.fetch;
 }
-/** Real API transport: Bearer auth + `{ success, message, data }` envelope unwrap. */
+/** Real API transport: API-key auth + `{ success, message, data }` envelope unwrap. */
 export declare function http(cfg: HttpTransportConfig): Transport;

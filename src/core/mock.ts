@@ -164,10 +164,10 @@ export function mock(opts?: { seed?: MockState; latencyMs?: number }): Transport
     const json = req.json as any
 
     // ── User / identity ──────────────────────────────────────────────────────
-    if (/^api\/auth\/me$/.test(p) || /^api\/embeddable\/moov-account-id$/.test(p)) {
+    if (/^api\/auth\/me$/.test(p)) {
       return {
         id: 'user_mock',
-        email: (req.query?.email as string) ?? 'user@mock.test',
+        email: 'user@mock.test',
         moovAccountId: s.moovAccountId,
         isOnboarded: s.isOnboarded,
         pendingCapabilities: s.capabilitiesRequested ? [] : capabilities(s),

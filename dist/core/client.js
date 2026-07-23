@@ -5,15 +5,18 @@ import * as fn from './functions.js';
 export { resolveOnboardingResumeStep, isOnboardingSectionComplete } from './resume.js';
 export { mock, createMockState } from './mock.js';
 function resolveTransport(cfg) {
+    if (typeof cfg === 'string')
+        return http({ apiKey: cfg });
     return 'transport' in cfg ? cfg.transport : http(cfg);
 }
+/** Advanced escape hatch. Most consumers should call setupBison(apiKey) once. */
 export function createClient(cfg) {
     const t = resolveTransport(cfg);
     function registerBankAccount(scope, payload) {
         return fn.registerBankAccount(t, scope, payload);
     }
     return {
-        getUser: (opts) => fn.getUser(t, opts),
+        getUser: () => fn.getUser(t),
         getOnboardingStatus: (scope) => fn.getOnboardingStatus(t, scope),
         getOnboardingSection: (scope, step) => fn.getOnboardingSection(t, scope, step),
         submitOnboardingSection: (scope, submit) => fn.submitOnboardingSection(t, scope, submit),

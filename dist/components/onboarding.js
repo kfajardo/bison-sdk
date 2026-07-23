@@ -11,7 +11,7 @@
 // banking embeds <bison-bank-accounts> for the same scope (composition).
 import { ONBOARDING_STEPS } from '../core/types.js';
 import { resolveOnboardingResumeStep } from '../core/resume.js';
-import { createClient } from '../core/client.js';
+import { getBisonClient } from '../core/sdk.js';
 import { el, emit, setState } from './dom.js';
 import { parseJsonAttribute, readFields, showErrors, slotPlaceholder } from './form.js';
 import { buildSubmit, collectOwners, renderSection, sectionSpec, validateOwnersForm, validateSection, } from './steps.js';
@@ -54,7 +54,7 @@ function bankingEligible(status) {
     return status.bankAccountEligibility?.isSupported !== false;
 }
 /**
- * <bison-onboarding persona scope-id entity-id? base-url prefill? labels?>
+ * <bison-onboarding persona scope-id entity-id? prefill? labels?>
  * Set `.client` to inject a client/transport (tests). Renders the 5-section accordion.
  * Prefill: set `.prefill` (OnboardingPrefill) or the `prefill` attribute (same shape,
  * JSON). Redacted-resume placeholders (§5.2) win over prefill for fields the server
@@ -111,13 +111,7 @@ export class BisonOnboarding extends HTMLElement {
         void this.refresh();
     }
     resolveClient() {
-        if (this.client)
-            return this.client;
-        const baseUrl = this.getAttribute('base-url');
-        if (!baseUrl)
-            throw new Error('bison-onboarding requires a base-url attribute or a .client property');
-        this.client = createClient({ baseUrl });
-        return this.client;
+        return this.client ?? getBisonClient();
     }
     /** GET status, set the resume/auto-open target, re-render. */
     async refresh() {

@@ -7,7 +7,7 @@ import type {
   OnboardingSubmit,
 } from '../core/types.js'
 import type { Persona, Scope } from '../core/scope.js'
-import { createClient } from '../core/client.js'
+import { getBisonClient } from '../core/sdk.js'
 import {
   US_STATES,
   digitsOnly,
@@ -128,11 +128,7 @@ export class BisonOnboardingPartial extends HTMLElement {
   }
 
   private resolveClient(): BisonSectionClient {
-    if (this.client) return this.client
-    const baseUrl = this.getAttribute('base-url')
-    if (!baseUrl) throw new Error('bison-onboarding-partial requires a base-url attribute or a .client property')
-    this.client = createClient({ baseUrl })
-    return this.client
+    return this.client ?? getBisonClient()
   }
 
   private render(): void {

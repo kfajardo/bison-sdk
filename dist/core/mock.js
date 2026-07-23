@@ -89,10 +89,10 @@ export function mock(opts) {
         const p = path.replace(/^\//, '');
         const json = req.json;
         // ── User / identity ──────────────────────────────────────────────────────
-        if (/^api\/auth\/me$/.test(p) || /^api\/embeddable\/moov-account-id$/.test(p)) {
+        if (/^api\/auth\/me$/.test(p)) {
             return {
                 id: 'user_mock',
-                email: req.query?.email ?? 'user@mock.test',
+                email: 'user@mock.test',
                 moovAccountId: s.moovAccountId,
                 isOnboarded: s.isOnboarded,
                 pendingCapabilities: s.capabilitiesRequested ? [] : capabilities(s),

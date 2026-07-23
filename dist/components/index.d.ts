@@ -5,4 +5,4 @@ export { BisonBankAccounts } from './bank_accounts.js';
 export type { PlaidLinkHook, PlaidLinkResult } from './bank_accounts.js';
 /** Registers <bison-onboarding>, <bison-onboarding-partial>, <bison-bank-accounts>.
  *  Idempotent — safe to call more than once. */
-export declare function defineBisonComponents(): void;
+export declare function defineBisonComponents(apiKey?: string): void;

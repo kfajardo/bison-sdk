@@ -50,10 +50,10 @@ export declare function makeBusinessProfileSchema(options?: {
     doingBusinessAs: z.ZodString | z.ZodEffects<z.ZodEffects<z.ZodOptional<z.ZodString>, string | undefined, string | undefined>, string | undefined, string | undefined>;
     ein: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -63,10 +63,10 @@ export declare function makeBusinessProfileSchema(options?: {
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -76,10 +76,10 @@ export declare function makeBusinessProfileSchema(options?: {
     website?: string | undefined;
     addressLine2?: string | undefined;
 }>, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -89,10 +89,10 @@ export declare function makeBusinessProfileSchema(options?: {
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -116,10 +116,10 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     doingBusinessAs: z.ZodString | z.ZodEffects<z.ZodEffects<z.ZodOptional<z.ZodString>, string | undefined, string | undefined>, string | undefined, string | undefined>;
     ein: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -129,10 +129,10 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -142,10 +142,10 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }>, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -155,10 +155,10 @@ export declare const businessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -182,10 +182,10 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     doingBusinessAs: z.ZodString | z.ZodEffects<z.ZodEffects<z.ZodOptional<z.ZodString>, string | undefined, string | undefined>, string | undefined, string | undefined>;
     ein: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -195,10 +195,10 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -208,10 +208,10 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }>, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -221,10 +221,10 @@ export declare const operatorBusinessProfileSchema: z.ZodEffects<z.ZodObject<{
     website?: string | undefined;
     addressLine2?: string | undefined;
 }, {
-    email: string;
     ein: string;
     legalBusinessName: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -247,8 +247,8 @@ export declare const controlOfficerSchema: z.ZodObject<{
     dateOfBirth: z.ZodEffects<z.ZodString, string, string>;
     ssn: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -259,8 +259,8 @@ export declare const controlOfficerSchema: z.ZodObject<{
     dateOfBirth: string;
     postalCode: string;
 }, {
-    email: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -284,8 +284,8 @@ export declare const beneficialOwnerSchema: z.ZodObject<{
     ssn: z.ZodString;
     ownershipPercentage: z.ZodEffects<z.ZodString, string, string>;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;
@@ -296,8 +296,8 @@ export declare const beneficialOwnerSchema: z.ZodObject<{
     dateOfBirth: string;
     postalCode: string;
 }, {
-    email: string;
     phone: string;
+    email: string;
     addressLine1: string;
     city: string;
     state: string;

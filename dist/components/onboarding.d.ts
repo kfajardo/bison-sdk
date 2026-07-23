@@ -1,6 +1,6 @@
 import type { OnboardingStep } from '../core/types.js';
 import type { Persona, Scope } from '../core/scope.js';
-import { type BisonClient } from '../core/client.js';
+import type { BisonClient } from '../core/client.js';
 export type BisonSectionClient = BisonClient;
 export type SectionUiState = 'locked' | 'active' | 'done' | 'error';
 /** Text overrides (copy / i18n), merged over defaults. State keys customize the
@@ -15,7 +15,7 @@ export interface OnboardingPrefill {
     volume?: Record<string, string>;
 }
 /**
- * <bison-onboarding persona scope-id entity-id? base-url prefill? labels?>
+ * <bison-onboarding persona scope-id entity-id? prefill? labels?>
  * Set `.client` to inject a client/transport (tests). Renders the 5-section accordion.
  * Prefill: set `.prefill` (OnboardingPrefill) or the `prefill` attribute (same shape,
  * JSON). Redacted-resume placeholders (§5.2) win over prefill for fields the server

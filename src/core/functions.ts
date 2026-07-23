@@ -26,12 +26,8 @@ import type {
 
 // ── Onboarding ──────────────────────────────────────────────────────────────
 
-/** GET the current user. With `email`, resolve via the moov-account-id lookup so
- *  a server can identify an entity by email; otherwise GET api/auth/me. */
-export function getUser(transport: Transport, opts?: { email?: string }): Promise<UserInfo> {
-  if (opts?.email) {
-    return transport<UserInfo>('api/embeddable/moov-account-id', { query: { email: opts.email } })
-  }
+/** GET the current API-key identity. */
+export function getUser(transport: Transport): Promise<UserInfo> {
   return transport<UserInfo>('api/auth/me')
 }
 

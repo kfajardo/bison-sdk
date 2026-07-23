@@ -10,15 +10,14 @@ data-attributes, slot names, token names, and events below are the public API.
 
 | Element | Purpose | Key attributes |
 |---|---|---|
-| `<bison-onboarding>` | Full multi-step KYB onboarding flow | `persona`, `scope-id`, `entity-id?`, `base-url?` |
+| `<bison-onboarding>` | Full multi-step KYB onboarding flow | `persona`, `scope-id`, `entity-id?` |
 | `<bison-onboarding-step step="…">` | One onboarding step, standalone | `step`, `persona` |
-| `<bison-onboarding-partial>` | Partial onboarding with one manual destination-account submission | `persona`, `scope-id`, `entity-id?`, `base-url?`, `terms-url?` |
-| `<bison-bank-accounts>` | Bank-account list / add / verify / default / delete | `persona`, `scope-id`, `entity-id?`, `base-url?` |
+| `<bison-onboarding-partial>` | Partial onboarding with one manual destination-account submission | `persona`, `scope-id`, `entity-id?`, `terms-url?` |
+| `<bison-bank-accounts>` | Bank-account list / add / verify / default / delete | `persona`, `scope-id`, `entity-id?` |
 
 `persona` is `"wio" | "operator"`. `scope-id` is the WIO or Operator id; add
-`entity-id` for the WIO sub-entity route family. `base-url` is only needed when a
-component builds its own client; sharing a `createClient()` via the `.client`
-property (as in the demos) needs no `base-url`.
+`entity-id` for the WIO sub-entity route family. Components use the shared client
+configured by `setupBison(apiKey)`; tests may still inject `.client`.
 
 There are **four styling layers**. Reach for the lowest-numbered one that does the
 job: class + attribute cover ~90% of restyling, slots handle structural swaps,

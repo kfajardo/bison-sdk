@@ -56,7 +56,7 @@ export declare class BankAccountsPanel {
     private emitError;
 }
 /**
- * <bison-bank-accounts persona scope-id entity-id? base-url>
+ * <bison-bank-accounts persona scope-id entity-id?>
  * Set `.client` to inject a client (or share the onboarding element's). Override
  * `.onPlaidLink` to drive the real Plaid Link handoff.
  * Events (bubbling): bison-bank-added, bison-bank-verified, bison-bank-default-changed,

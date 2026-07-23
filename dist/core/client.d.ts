@@ -1,19 +1,14 @@
-import type { AuthProvider, Transport } from './transport.js';
+import type { HttpTransportConfig, Transport } from './transport.js';
 import type { Scope } from './scope.js';
 import type { BankAccount, BankRegister, CompleteVerificationPayload, MoovFilePurpose, OnboardingStep, OnboardingSubmit, PaymentMethodKey, PlaidRegisterResult } from './types.js';
 export { resolveOnboardingResumeStep, isOnboardingSectionComplete } from './resume.js';
 export { mock, createMockState, type MockState } from './mock.js';
 export type ClientConfig = {
     transport: Transport;
-} | {
-    baseUrl: string;
-    auth?: AuthProvider;
-    fetch?: typeof globalThis.fetch;
-};
-export declare function createClient(cfg: ClientConfig): {
-    getUser: (opts?: {
-        email?: string;
-    }) => Promise<import("./types.js").UserInfo>;
+} | HttpTransportConfig;
+/** Advanced escape hatch. Most consumers should call setupBison(apiKey) once. */
+export declare function createClient(cfg: ClientConfig | string): {
+    getUser: () => Promise<import("./types.js").UserInfo>;
     getOnboardingStatus: (scope: Scope) => Promise<import("./types.js").OnboardingStatus>;
     getOnboardingSection: <Step extends OnboardingStep>(scope: Scope, step: Step) => Promise<import("./types.js").OnboardingSectionData[Step] | null>;
     submitOnboardingSection: (scope: Scope, submit: OnboardingSubmit) => Promise<import("./types.js").SaveSectionResult>;

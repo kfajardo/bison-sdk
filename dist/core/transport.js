@@ -1,4 +1,4 @@
-// Phase 0 — transport foundation. Auth is a token callback (no X-Embeddable-Key).
+// Phase 0 — transport foundation. Production uses one fixed origin + API key.
 // A Transport is the single seam the whole SDK sits on: http() talks to the real
 // API, mock() replays the documented behavior. Everything above this file is
 // identical against both.
@@ -19,23 +19,33 @@ export class BisonApiError extends Error {
         this.name = 'BisonApiError';
     }
 }
+export const BISON_API_URL = 'https://bison-backend-prod-cbdfeveaa2a6cngk.southeastasia-01.azurewebsites.net';
 function asEnvelope(body) {
     return typeof body === 'object' && body !== null && typeof body.success === 'boolean'
         ? body
         : undefined;
 }
-/** Real API transport: Bearer auth + `{ success, message, data }` envelope unwrap. */
+/** Real API transport: API-key auth + `{ success, message, data }` envelope unwrap. */
 export function http(cfg) {
-    const base = cfg.baseUrl.endsWith('/') ? cfg.baseUrl : `${cfg.baseUrl}/`;
+    const apiKey = cfg.apiKey.trim();
+    if (!apiKey)
+        throw new TypeError('apiKey is required');
+    const origin = cfg.baseUrl ?? BISON_API_URL;
+    const parsedOrigin = new URL(origin);
+    if (parsedOrigin.protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(parsedOrigin.hostname)) {
+        throw new TypeError('baseUrl must use HTTPS unless it targets localhost');
+    }
+    const base = parsedOrigin.href.endsWith('/') ? parsedOrigin.href : `${parsedOrigin.href}/`;
     return async (path, opts = {}) => {
         const url = new URL(path.replace(/^\//, ''), base);
         for (const [key, value] of Object.entries(opts.query ?? {})) {
             if (value !== undefined)
                 url.searchParams.set(key, String(value));
         }
-        const headers = { Accept: 'application/json' };
-        if (cfg.auth)
-            headers.Authorization = `Bearer ${await cfg.auth.getToken()}`;
+        const headers = {
+            Accept: 'application/json',
+            'X-Embeddable-Key': apiKey,
+        };
         let body;
         if (opts.form) {
             body = opts.form;

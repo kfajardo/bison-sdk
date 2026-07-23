@@ -19,7 +19,8 @@ import type {
 import type { Persona, Scope } from '../core/scope.js'
 import { ONBOARDING_STEPS } from '../core/types.js'
 import { resolveOnboardingResumeStep } from '../core/resume.js'
-import { createClient, type BisonClient } from '../core/client.js'
+import type { BisonClient } from '../core/client.js'
+import { getBisonClient } from '../core/sdk.js'
 import { el, emit, setState } from './dom.js'
 import { parseJsonAttribute, readFields, showErrors, slotPlaceholder } from './form.js'
 import {
@@ -31,8 +32,7 @@ import {
   validateSection,
 } from './steps.js'
 
-// The client the elements drive. The real createClient() is finished, so the
-// elements depend on its type directly; set `.client` (tests) or supply `base-url`.
+// setupBison() supplies the shared client; tests can inject one directly.
 export type BisonSectionClient = BisonClient
 
 // The accordion's five surfaces, in canonical order (documents last).
@@ -95,7 +95,7 @@ export interface OnboardingPrefill {
 }
 
 /**
- * <bison-onboarding persona scope-id entity-id? base-url prefill? labels?>
+ * <bison-onboarding persona scope-id entity-id? prefill? labels?>
  * Set `.client` to inject a client/transport (tests). Renders the 5-section accordion.
  * Prefill: set `.prefill` (OnboardingPrefill) or the `prefill` attribute (same shape,
  * JSON). Redacted-resume placeholders (§5.2) win over prefill for fields the server
@@ -156,11 +156,7 @@ export class BisonOnboarding extends HTMLElement {
   }
 
   private resolveClient(): BisonSectionClient {
-    if (this.client) return this.client
-    const baseUrl = this.getAttribute('base-url')
-    if (!baseUrl) throw new Error('bison-onboarding requires a base-url attribute or a .client property')
-    this.client = createClient({ baseUrl })
-    return this.client
+    return this.client ?? getBisonClient()
   }
 
   /** GET status, set the resume/auto-open target, re-render. */

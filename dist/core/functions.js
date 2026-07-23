@@ -3,12 +3,8 @@
 // here (validation is the /validation layer's job); these are the wire calls.
 import { kybBase, bankBase } from './scope.js';
 // ── Onboarding ──────────────────────────────────────────────────────────────
-/** GET the current user. With `email`, resolve via the moov-account-id lookup so
- *  a server can identify an entity by email; otherwise GET api/auth/me. */
-export function getUser(transport, opts) {
-    if (opts?.email) {
-        return transport('api/embeddable/moov-account-id', { query: { email: opts.email } });
-    }
+/** GET the current API-key identity. */
+export function getUser(transport) {
     return transport('api/auth/me');
 }
 /** Map an OnboardingStep to its per-section GET/POST path segment. */

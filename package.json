@@ -1,7 +1,7 @@
 {
   "name": "bison-jib-sdk",
   "version": "1.0.0",
-  "description": "Bison JIB SDK: typed API client, onboarding validation rules, and unstyled onboarding web components",
+  "description": "Bison JIB SDK: typed API functions, onboarding validation rules, and unstyled onboarding web components",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -14,8 +14,12 @@
   "type": "module",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "bin"
   ],
+  "bin": {
+    "bison-jib-sdk": "./bin/bison-jib-sdk.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

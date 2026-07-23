@@ -3,34 +3,41 @@
 Embed Bison JIB onboarding and banking into your own app. Three layers, use any of
 them:
 
-- **Core** — typed async API client over a swappable transport (browser + Node)
+- **Core** — typed async API functions over a swappable transport (browser + Node)
 - **Validation** — the exact onboarding validation rules the Bison platform uses (zod)
 - **Components** — unstyled onboarding + banking web components (framework-agnostic)
 
 ```sh
-npm install bison-jib-sdk
+BISON_API_KEY=your_publishable_key npx bison-jib-sdk init
 ```
+
+This installs `bison-jib-sdk` and creates `bison.setup.mjs`. Import that file once;
+the production API URL, API-key header, client, and component registration are fixed
+inside the SDK.
+
+> Browser API keys are visible to users. Only use a publishable, origin-restricted
+> embeddable key; never ship a server secret.
 
 ## Core
 
-The client sits on a **transport** — the single seam between your code and the API.
-Use `http()` (real API, Bearer auth, envelope unwrap) or `mock()` (in-process replay,
-no backend). Auth is a **token callback**: the SDK never holds a raw API key. Your
-server mints a short-lived, scope-bound token (from an API-key exchange, or an Auth0
-token — the SDK is neutral) and hands it back per request.
+Import the generated setup, then call the exported functions directly:
 
 ```ts
-import { createClient } from 'bison-jib-sdk'
+import './bison.setup.mjs'
+import { getOnboardingStatus } from 'bison-jib-sdk'
 
-const bison = createClient({
-  baseUrl: 'https://api.yourhost.com',
-  auth: { getToken: async () => fetchShortLivedTokenFromYourServer() },
-})
+const status = await getOnboardingStatus(scope)
 ```
 
-> **Auth changed.** There is no `X-Embeddable-Key` and no `apiKey` config. Tokens are
-> short-lived and minted server-side; `auth.getToken` is called per request (cache
-> inside the callback if you like).
+Without the generator, the equivalent setup is one call:
+
+```ts
+import { setupBison } from 'bison-jib-sdk'
+
+setupBison(import.meta.env.PUBLIC_BISON_API_KEY)
+```
+
+Requests use the fixed production origin and send `X-Embeddable-Key` on every call.
 
 ### Scope
 
@@ -54,24 +61,34 @@ Onboarding is five sections in canonical order — `business`, `officer`, `owner
 `volume`, `documents`. Read status, then submit sections one at a time:
 
 ```ts
-const status = await bison.getOnboardingStatus(scope)
-const business = await bison.getOnboardingSection(scope, 'business')
+import {
+  getOnboardingIndustries,
+  getOnboardingSection,
+  getOnboardingStatus,
+  getOnboardingTermsToken,
+  saveOnboardingPaymentMethods,
+  submitOnboardingSection,
+  uploadOnboardingDocument,
+} from 'bison-jib-sdk'
+
+const status = await getOnboardingStatus(scope)
+const business = await getOnboardingSection(scope, 'business')
 
 // Where should a returning user resume? (pure, from status alone)
 import { resolveOnboardingResumeStep } from 'bison-jib-sdk'
 const step = resolveOnboardingResumeStep(status)
 
 // Submit a section — discriminated by `step`
-await bison.submitOnboardingSection(scope, { step: 'business', data: businessProfile })
-await bison.submitOnboardingSection(scope, { step: 'officer', data: officer })
-await bison.submitOnboardingSection(scope, { step: 'owners', data: owners, noOwnersAbove25: false })
-await bison.submitOnboardingSection(scope, { step: 'volume', data: volume })
+await submitOnboardingSection(scope, { step: 'business', data: businessProfile })
+await submitOnboardingSection(scope, { step: 'officer', data: officer })
+await submitOnboardingSection(scope, { step: 'owners', data: owners, noOwnersAbove25: false })
+await submitOnboardingSection(scope, { step: 'volume', data: volume })
 
 // Documents (multipart) + Moov helpers
-await bison.uploadOnboardingDocument(scope, file, 'merchant_underwriting')
-await bison.getOnboardingIndustries(scope)
-await bison.getOnboardingTermsToken()
-await bison.saveOnboardingPaymentMethods(scope, ['cards', 'ach'])
+await uploadOnboardingDocument(scope, file, 'merchant_underwriting')
+await getOnboardingIndustries(scope)
+await getOnboardingTermsToken()
+await saveOnboardingPaymentMethods(scope, ['cards', 'ach'])
 ```
 
 `submitOnboardingSection` with `step: 'business'` creates the provider account on first save and
@@ -80,15 +97,25 @@ returns `moovAccountId` on the result.
 ### Banking
 
 ```ts
-await bison.getBankAccounts(scope)                                  // BankAccount[]
-await bison.registerBankAccount(scope, { method: 'manual', holderName: 'Acme LLC',
+import {
+  completeBankAccountVerification,
+  deleteBankAccount,
+  getBankAccounts,
+  getPlaidLinkToken,
+  initiateBankAccountVerification,
+  registerBankAccount,
+  setDefaultBankAccount,
+} from 'bison-jib-sdk'
+
+await getBankAccounts(scope)                                  // BankAccount[]
+await registerBankAccount(scope, { method: 'manual', holderName: 'Acme LLC',
   routingNumber: '021000021', accountNumber: '1234567890' })       // -> BankAccount
-await bison.getPlaidLinkToken(scope)                                // { linkToken }
-await bison.registerBankAccount(scope, { method: 'plaid', publicToken, accountId })
-await bison.initiateBankAccountVerification(scope, bankAccountId)
-await bison.completeBankAccountVerification(scope, bankAccountId, { code: 'MV1234' })
-await bison.setDefaultBankAccount(scope, bankAccountId)
-await bison.deleteBankAccount(scope, bankAccountId)
+await getPlaidLinkToken(scope)                                // { linkToken }
+await registerBankAccount(scope, { method: 'plaid', publicToken, accountId })
+await initiateBankAccountVerification(scope, bankAccountId)
+await completeBankAccountVerification(scope, bankAccountId, { code: 'MV1234' })
+await setDefaultBankAccount(scope, bankAccountId)
+await deleteBankAccount(scope, bankAccountId)
 ```
 
 Note the client-side guards the platform enforces (reproduce them in custom flows):
@@ -101,13 +128,12 @@ machine-readable `errorCode` when the API provides one (e.g. `NON_US_ADDRESS`).
 
 ### Mock transport
 
-For local dev, tests, or demos with no backend, swap in `mock()`. Everything above
-the transport is identical against it:
+For custom transports and tests, `createClient()` remains as an advanced escape hatch:
 
 ```ts
 import { createClient, mock } from 'bison-jib-sdk'
 
-const bison = createClient({ transport: mock() })   // no baseUrl, no auth needed
+const bison = createClient({ transport: mock() })
 ```
 
 The `demo/` pages run entirely on `mock()` — see below.
@@ -130,13 +156,10 @@ regular DOM, so plain CSS reaches all depths.
 
 ```html
 <script type="module">
-  import { createClient } from 'bison-jib-sdk'
-  import { defineBisonComponents } from 'bison-jib-sdk/components'
-  defineBisonComponents()
+  import './bison.setup.mjs'
 
-  const client = createClient({ baseUrl: 'https://api.yourhost.com', auth: { getToken } })
-  document.querySelector('bison-onboarding').client = client
-  document.querySelector('bison-bank-accounts').client = client
+  const onboarding = document.querySelector('bison-onboarding')
+  const bankAccounts = document.querySelector('bison-bank-accounts')
 </script>
 
 <bison-onboarding persona="wio" scope-id="wio_123"></bison-onboarding>

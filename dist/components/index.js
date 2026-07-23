@@ -7,12 +7,15 @@ export { BisonBankAccounts } from './bank_accounts.js';
 import { BisonOnboarding } from './onboarding.js';
 import { BisonOnboardingPartial } from './partial.js';
 import { BisonBankAccounts } from './bank_accounts.js';
+import { setupBison } from '../core/sdk.js';
 /** Registers <bison-onboarding>, <bison-onboarding-partial>, <bison-bank-accounts>.
  *  Idempotent — safe to call more than once. */
-export function defineBisonComponents() {
+export function defineBisonComponents(apiKey) {
     if (typeof customElements === 'undefined') {
         throw new Error('bison-jib-sdk/components requires a browser environment');
     }
+    if (apiKey !== undefined)
+        setupBison(apiKey);
     if (!customElements.get('bison-onboarding'))
         customElements.define('bison-onboarding', BisonOnboarding);
     if (!customElements.get('bison-onboarding-partial'))

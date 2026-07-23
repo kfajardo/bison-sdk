@@ -12,7 +12,7 @@
 
 import type { BankAccount, BankRegister, PlaidRegisterResult } from '../core/types.js'
 import type { Persona, Scope } from '../core/scope.js'
-import { createClient } from '../core/client.js'
+import { getBisonClient } from '../core/sdk.js'
 import { BANK_ACCOUNT_TYPES } from '../validation/index.js'
 import type { BisonSectionClient } from './onboarding.js'
 import { el, emit, setState } from './dom.js'
@@ -379,7 +379,7 @@ export class BankAccountsPanel {
 }
 
 /**
- * <bison-bank-accounts persona scope-id entity-id? base-url>
+ * <bison-bank-accounts persona scope-id entity-id?>
  * Set `.client` to inject a client (or share the onboarding element's). Override
  * `.onPlaidLink` to drive the real Plaid Link handoff.
  * Events (bubbling): bison-bank-added, bison-bank-verified, bison-bank-default-changed,
@@ -410,11 +410,7 @@ export class BisonBankAccounts extends HTMLElement {
   }
 
   private resolveClient(): BisonSectionClient {
-    if (this.client) return this.client
-    const baseUrl = this.getAttribute('base-url')
-    if (!baseUrl) throw new Error('bison-bank-accounts requires a base-url attribute or a .client property')
-    this.client = createClient({ baseUrl })
-    return this.client
+    return this.client ?? getBisonClient()
   }
 
   async refresh(): Promise<void> {

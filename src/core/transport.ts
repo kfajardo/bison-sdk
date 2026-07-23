@@ -1,4 +1,4 @@
-// Phase 0 — transport foundation. Auth is a token callback (no X-Embeddable-Key).
+// Phase 0 — transport foundation. Production uses one fixed origin + API key.
 // A Transport is the single seam the whole SDK sits on: http() talks to the real
 // API, mock() replays the documented behavior. Everything above this file is
 // identical against both.
@@ -31,21 +31,13 @@ export interface RequestOptions {
  */
 export type Transport = <T>(path: string, opts?: RequestOptions) => Promise<T>
 
-/**
- * Token provider. The SDK never holds a raw API key — the consumer's server mints
- * a short-lived, scope-bound token (from an API key exchange, or an Auth0 token —
- * the SDK is neutral) and this callback returns it. Called per request; cache in
- * the callback if you want.
- */
-export interface AuthProvider {
-  getToken: () => string | Promise<string>
-}
+export const BISON_API_URL = 'https://bison-backend-prod-cbdfeveaa2a6cngk.southeastasia-01.azurewebsites.net'
 
 export interface HttpTransportConfig {
-  /** API origin, e.g. https://api.example.com */
-  baseUrl: string
-  /** Bearer token provider. Omit only against endpoints that need no auth. */
-  auth?: AuthProvider
+  /** Publishable embeddable API key sent as X-Embeddable-Key. */
+  apiKey: string
+  /** Advanced override for local/staging tests. Production is the default. */
+  baseUrl?: string
   /** Override fetch (tests, custom agents). Defaults to globalThis.fetch. */
   fetch?: typeof globalThis.fetch
 }
@@ -64,17 +56,26 @@ function asEnvelope(body: unknown): Envelope | undefined {
     : undefined
 }
 
-/** Real API transport: Bearer auth + `{ success, message, data }` envelope unwrap. */
+/** Real API transport: API-key auth + `{ success, message, data }` envelope unwrap. */
 export function http(cfg: HttpTransportConfig): Transport {
-  const base = cfg.baseUrl.endsWith('/') ? cfg.baseUrl : `${cfg.baseUrl}/`
+  const apiKey = cfg.apiKey.trim()
+  if (!apiKey) throw new TypeError('apiKey is required')
+  const origin = cfg.baseUrl ?? BISON_API_URL
+  const parsedOrigin = new URL(origin)
+  if (parsedOrigin.protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(parsedOrigin.hostname)) {
+    throw new TypeError('baseUrl must use HTTPS unless it targets localhost')
+  }
+  const base = parsedOrigin.href.endsWith('/') ? parsedOrigin.href : `${parsedOrigin.href}/`
   return async <T>(path: string, opts: RequestOptions = {}): Promise<T> => {
     const url = new URL(path.replace(/^\//, ''), base)
     for (const [key, value] of Object.entries(opts.query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value))
     }
 
-    const headers: Record<string, string> = { Accept: 'application/json' }
-    if (cfg.auth) headers.Authorization = `Bearer ${await cfg.auth.getToken()}`
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'X-Embeddable-Key': apiKey,
+    }
 
     let body: BodyInit | undefined
     if (opts.form) {

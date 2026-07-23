@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { GlobalRegistrator } from '@happy-dom/global-registrator'
 import { createClient, mock } from '../src/core/client'
+import { setupBison } from '../src/core/sdk'
 import type { BisonClient } from '../src/core/client'
 import type { Scope } from '../src/core/scope'
 
@@ -23,6 +24,33 @@ function mountOnboarding(client: BisonClient): InstanceType<typeof BisonOnboardi
 }
 
 describe('bison-onboarding gating', () => {
+  test('uses the shared setup without assigning .client', async () => {
+    let key: string | null = null
+    setupBison('public_test_key', {
+      baseUrl: 'https://api.test',
+      fetch: async (_input, init) => {
+        key = new Headers(init?.headers).get('X-Embeddable-Key')
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            businessProfileStatus: 'NotStarted',
+            controlOfficerStatus: 'NotStarted',
+            beneficialOwnersStatus: 'NotStarted',
+            processingVolumeStatus: 'NotStarted',
+            documents: [],
+            capabilities: [],
+            isComplete: false,
+          },
+        }))
+      },
+    })
+    document.body.replaceChildren()
+    document.body.innerHTML = '<bison-onboarding persona="wio" scope-id="wio_1"></bison-onboarding>'
+    await settle()
+    expect(document.querySelector('bison-onboarding')).toBeTruthy()
+    expect(key).toBe('public_test_key')
+  })
+
   test('fresh account: 5 sections, business active, the rest locked', async () => {
     const el = mountOnboarding(createClient({ transport: mock() }))
     await el.refresh()

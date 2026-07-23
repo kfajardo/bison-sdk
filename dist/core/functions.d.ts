@@ -1,11 +1,8 @@
 import type { Transport } from './transport.js';
 import type { Scope } from './scope.js';
 import type { BankAccount, BankRegister, CompleteVerificationPayload, DocumentUploadResult, Industry, MoovFilePurpose, OnboardingStatus, OnboardingSectionData, OnboardingStep, OnboardingSubmit, PaymentMethodKey, PlaidLinkToken, PlaidRegisterResult, SaveSectionResult, TosToken, UserInfo } from './types.js';
-/** GET the current user. With `email`, resolve via the moov-account-id lookup so
- *  a server can identify an entity by email; otherwise GET api/auth/me. */
-export declare function getUser(transport: Transport, opts?: {
-    email?: string;
-}): Promise<UserInfo>;
+/** GET the current API-key identity. */
+export declare function getUser(transport: Transport): Promise<UserInfo>;
 /** Load the full onboarding status. */
 export declare function getOnboardingStatus(transport: Transport, scope: Scope): Promise<OnboardingStatus>;
 /** Load one saved onboarding section. */

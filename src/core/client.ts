@@ -2,7 +2,7 @@
 // functions consumers can call directly.
 
 import { http } from './transport.js'
-import type { AuthProvider, Transport } from './transport.js'
+import type { HttpTransportConfig, Transport } from './transport.js'
 import type { Scope } from './scope.js'
 import type {
   BankAccount,
@@ -20,13 +20,15 @@ export { mock, createMockState, type MockState } from './mock.js'
 
 export type ClientConfig =
   | { transport: Transport }
-  | { baseUrl: string; auth?: AuthProvider; fetch?: typeof globalThis.fetch }
+  | HttpTransportConfig
 
-function resolveTransport(cfg: ClientConfig): Transport {
+function resolveTransport(cfg: ClientConfig | string): Transport {
+  if (typeof cfg === 'string') return http({ apiKey: cfg })
   return 'transport' in cfg ? cfg.transport : http(cfg)
 }
 
-export function createClient(cfg: ClientConfig) {
+/** Advanced escape hatch. Most consumers should call setupBison(apiKey) once. */
+export function createClient(cfg: ClientConfig | string) {
   const t = resolveTransport(cfg)
   function registerBankAccount(scope: Scope, payload: Extract<BankRegister, { method: 'manual' }>): Promise<BankAccount>
   function registerBankAccount(scope: Scope, payload: Extract<BankRegister, { method: 'plaid' }>): Promise<PlaidRegisterResult>
@@ -35,7 +37,7 @@ export function createClient(cfg: ClientConfig) {
   }
 
   return {
-    getUser: (opts?: { email?: string }) => fn.getUser(t, opts),
+    getUser: () => fn.getUser(t),
     getOnboardingStatus: (scope: Scope) => fn.getOnboardingStatus(t, scope),
     getOnboardingSection: <Step extends OnboardingStep>(scope: Scope, step: Step) => fn.getOnboardingSection(t, scope, step),
     submitOnboardingSection: (scope: Scope, submit: OnboardingSubmit) => fn.submitOnboardingSection(t, scope, submit),

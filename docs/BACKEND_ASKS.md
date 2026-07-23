@@ -9,30 +9,18 @@ current `bison-jib-web-flow` + `bison-jib-pay-api` code).
 
 ---
 
-## 1. Decisions we need from you (blocking)
+## 1. Authentication contract
 
-1. **Auth model — API key exchange vs pass-through Auth0.**
-   The SDK sends `Authorization: Bearer <token>` via a `getToken()` callback. It does **not**
-   send `X-Embeddable-Key`. Our position: consumers get a Bison **API key**, their *server*
-   exchanges it for a short-lived, scope-bound **client token** (Stripe/Plaid pattern); the
-   browser only ever holds that token. This keeps Bison from having to validate each
-   consumer's Auth0 JWTs (per-tenant JWKS, audience, rotation) and gives us rate limits,
-   scoping, revocation, and usage attribution.
-   - **We need:** a token-issuance endpoint (server-to-server, API key → short-lived JWT) and
-     confirmation the KYB/bank endpoints accept that bearer token. If you insist on Auth0
-     pass-through, the SDK still works (`getToken` returns whatever), but we lose the above —
-     let's discuss.
+The SDK sends the consumer API key in `X-Embeddable-Key` on every request. All routes
+below, including `GET /api/auth/me`, must accept it. Browser keys must be publishable,
+origin-restricted, scoped, rate-limited, and revocable.
 
-2. **WIO endpoints under a non-session token.**
-   Today WIO/entity KYB + WIO bank-account management are **JWT-only** and assume an app session; operator
-   endpoints were `[AllowAnonymous][EmbeddableAuth]`. For an embeddable SDK we need **both**
-   personas reachable with the issued client token (no cookie session). Confirm the WIO routes
-   accept the bearer token and authorize by the token's scope/entity, not a session.
+One remaining decision:
 
-3. **OTP on bank mutations.**
+1. **OTP on bank mutations.**
    The platform gates set-default / delete / manual-add behind app-session OTP
    (`requestOtp`). Embeddable consumers have no such session. **Decision needed:** drop OTP
-   for token-scoped SDK calls, or return a documented `OtpRequiredResponse` the SDK surfaces
+   for API-key SDK calls, or return a documented `OtpRequiredResponse` the SDK surfaces
    as an event? The SDK currently assumes the former (no OTP challenge on these routes).
 
 ---
@@ -40,20 +28,25 @@ current `bison-jib-web-flow` + `bison-jib-pay-api` code).
 ## 2. Endpoints the SDK calls (must exist and match)
 
 All responses must use the `{ success, message, data }` envelope. Routes use the scope base:
-`api/wios/{id}` · `api/wios/{id}/entities/{entityId}` · `api/operators/{id}`.
+`/api/wios/{id}` · `/api/wios/{id}/entities/{entityId}` · `/api/operators/{id}`.
 
 ### Onboarding (KYB)
 | Method | Route (`{kyb}` = `<scope-base>/kyb`) | Body → `data` |
 |---|---|---|
 | GET | `{kyb}/status` | → `KybOnboardingStatusResponse` |
+| GET | `{kyb}/business-profile` | → `KybBusinessProfileResult \| null` |
 | POST | `{kyb}/business-profile` | `KybBusinessProfileRequest` → `SaveSectionResult`; partial onboarding includes `incorporationState`, `termsAccepted`, and request-scoped `controlOfficer` |
+| GET | `{kyb}/control-officer` | → `KybRepresentativeResult \| null` |
 | POST | `{kyb}/control-officer` (`?existingRepresentativeId=`) | `KybRepresentativeRequest` → `SaveSectionResult`; Bison calls this only when the provider entity already exists |
+| GET | `{kyb}/beneficial-owners` | → `KybRepresentativeResult[]` |
 | POST | `{kyb}/beneficial-owners` (`?noOwnersAbove25=&existingMappingsJson=`) | `KybBeneficialOwnerRequest[]` → `SaveSectionResult` |
+| GET | `{kyb}/processing-volume` | → `KybProcessingVolumeResult \| null` |
 | POST | `{kyb}/processing-volume` | `KybProcessingVolumeRequest` → `SaveSectionResult` |
+| GET | `{kyb}/documents` | → `KybDocumentInfo[]` |
 | POST | `{kyb}/documents` (multipart) | `file`, `purpose`, `metadata?` → `DocumentUploadResult` |
 | POST | `{kyb}/payment-method-capabilities` | `{ selectedPaymentMethods }` |
-| GET | `api/{wios\|operators}/kyb/industries` | → `Industry[]` |
-| POST | `api/moov/tos-token` | → `{ accessToken }` |
+| GET | `/api/{wios\|operators}/kyb/industries` | → `Industry[]` |
+| POST | `/api/moov/tos-token` | → `{ accessToken }` |
 
 ### Banking (`{bank}` = `<scope-base>/bank-accounts`)
 | Method | Route | Body → `data` |
@@ -64,14 +57,13 @@ All responses must use the `{ success, message, data }` envelope. Routes use the
 | POST | `{bank}/{id}/complete-verification` | `{ code }` |
 | PUT | `{bank}/{id}/set-default` | — |
 | DELETE | `{bank}/{id}` | — |
-| POST | `api/plaid/embeddable/create-token` (`?entityId=`) | → `{ linkToken }` |
-| POST | `api/plaid/embeddable/register-bank-account` | `PlaidRegisterPayload` → `PlaidRegisterResult` |
+| POST | `/api/plaid/embeddable/create-token` (`?entityId=`) | → `{ linkToken }` |
+| POST | `/api/plaid/embeddable/register-bank-account` | `PlaidRegisterPayload` → `PlaidRegisterResult` |
 
 ### Identity
 | Method | Route | Notes |
 |---|---|---|
-| GET | `api/auth/me` | → `UserInfo` (`isOnboarded`, `pendingCapabilities`) |
-| GET | `api/embeddable/moov-account-id` (`?email=`) | resolve entity by email (server-side) |
+| GET | `/api/auth/me` | → `UserInfo` (`isOnboarded`, `pendingCapabilities`) |
 
 **If any route name/shape differs from the above, tell us** — the mock encodes these exactly and the components/functions are built on them.
 
@@ -121,16 +113,13 @@ These are current-code realities the backend team should be aware of — some ne
 
 ## 5. What we need to publish/version
 
-- A **staging base URL** + a test API key (or test token issuer) so we can point `http()` at a
-  real environment and run the same flow the mock runs.
+- A test API key so we can run the mock contract against the real API.
 - A frozen list of **`errorCode` values** for the failure paths above (we'll map them in the
   SDK). We currently rely on: `NON_US_ADDRESS`, `ADDRESS_NOT_SET`, plus HTTP `409`/`400`/`404`.
-- Any **rate-limit / scope** rules on the issued token so we document them for consumers.
+- Any **rate-limit / scope / allowed-origin** rules on the API key so we document them for consumers.
 
 ---
 
-## 6. Open questions from the design (Embeddable V5 diagram)
+## 6. Open question from the design (Embeddable V5 diagram)
 
 1. **How tolerant is EnergyLink (EL) to code changes** to integrate our embeddables?
-2. **Auth0 tokens vs API-key provisioning** — see §1.1. We recommend API keys + server-side
-   token exchange; need your buy-in on the issuance endpoint.

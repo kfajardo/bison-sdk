@@ -1,4 +1,4 @@
-import { createClient } from '../core/client.js';
+import { getBisonClient } from '../core/sdk.js';
 import { US_STATES, digitsOnly, validatePartialOnboardingOwner, validatePartialOnboardingStep, } from '../validation/index.js';
 import { el, emit } from './dom.js';
 import { readFields, renderFields, setFieldValues, showErrors } from './form.js';
@@ -93,13 +93,7 @@ export class BisonOnboardingPartial extends HTMLElement {
             void this.loadBanking(); });
     }
     resolveClient() {
-        if (this.client)
-            return this.client;
-        const baseUrl = this.getAttribute('base-url');
-        if (!baseUrl)
-            throw new Error('bison-onboarding-partial requires a base-url attribute or a .client property');
-        this.client = createClient({ baseUrl });
-        return this.client;
+        return this.client ?? getBisonClient();
     }
     render() {
         this.bankAccounts = undefined;
